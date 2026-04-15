@@ -183,7 +183,7 @@ textarea.form-input{resize:vertical;min-height:70px}
 .p-col-add-label{font-size:12px;color:#a0aec0;font-weight:600}
 .p-col-add:hover .p-col-add-icon,.p-col-add:hover .p-col-add-label{color:#1565c0}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -599,7 +599,7 @@ let currentView = 'pipeline';
 // SUPABASE
 // ═══════════════════════════════════════════════════════════════════════
 const SUPA_URL = 'https://gubercneljnljhdzfici.supabase.co';
-const SUPA_KEY = '81faa1cb-ceb9-4d36-b7db-e8abf5507150';
+const SUPA_KEY = 'sb_publishable_eOA9kQddxSkiYGSVpoMMmw_ScIaWWlY';
 const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
 async function loadFromSupabase() {
