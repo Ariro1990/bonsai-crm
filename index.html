@@ -183,6 +183,7 @@ textarea.form-input{resize:vertical;min-height:70px}
 .p-col-add-label{font-size:12px;color:#a0aec0;font-weight:600}
 .p-col-add:hover .p-col-add-icon,.p-col-add:hover .p-col-add-label{color:#1565c0}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div class="app">
@@ -595,19 +596,74 @@ let currentView = 'pipeline';
 // (no external chart library — using inline canvas renderer below)
 
 // ═══════════════════════════════════════════════════════════════════════
-// STORAGE
+// SUPABASE
 // ═══════════════════════════════════════════════════════════════════════
-function save() {
-  try { localStorage.setItem('bcrm_deals', JSON.stringify(deals)); localStorage.setItem('bcrm_contacts', JSON.stringify(contacts)); localStorage.setItem('bcrm_activities', JSON.stringify(activities)); localStorage.setItem('bcrm_stages', JSON.stringify(STAGES)); } catch(e) {}
-}
-function load() {
+const SUPA_URL = 'https://gubercneljnljhdzfici.supabase.co';
+const SUPA_KEY = '81faa1cb-ceb9-4d36-b7db-e8abf5507150';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+async function loadFromSupabase() {
   try {
-    const d = localStorage.getItem('bcrm_deals'); if(d) { const parsed = JSON.parse(d); if(parsed.length > 0) { deals = parsed; nextDealId = Math.max(0,...deals.map(x=>x.id))+1; } }
-    const c = localStorage.getItem('bcrm_contacts'); if(c) { const parsed = JSON.parse(c); if(parsed.length > 0) { contacts = parsed; nextContId = Math.max(0,...contacts.map(x=>x.id))+1; } }
-    const a = localStorage.getItem('bcrm_activities'); if(a) { const parsed = JSON.parse(a); if(parsed.length > 0) { activities = parsed; nextActId = Math.max(0,...activities.map(x=>x.id))+1; } }
-    const s = localStorage.getItem('bcrm_stages'); if(s) { STAGES = JSON.parse(s); }
-  } catch(e) {}
+    const [rc, rd, ra] = await Promise.all([
+      supa.from('contacts').select('*').order('id'),
+      supa.from('deals').select('*').order('id'),
+      supa.from('activities').select('*').order('id'),
+    ]);
+    if(rc.data && rc.data.length > 0) {
+      contacts = rc.data.map(c => ({
+        id: c.id, company: c.company||'', contact: c.contact||'',
+        email: c.email||'', phone: c.phone||'', status: c.status||'Activo',
+        city: c.city||'', notes: c.notes||'', source: ''
+      }));
+      nextContId = Math.max(...contacts.map(x=>x.id)) + 1;
+    }
+    if(rd.data && rd.data.length > 0) {
+      deals = rd.data.map(d => ({
+        id: d.id, name: d.name||'', company: d.company||'', contact: d.contact||'',
+        email: d.email||'', amount: d.amount||0, prob: d.prob||50,
+        stage: d.stage||'nuevo', source: d.source||'', close: d.close_date||'',
+        notes: d.notes||'', nextContact: d.next_contact||null,
+        created: d.created_at ? d.created_at.slice(0,10) : new Date().toISOString().slice(0,10)
+      }));
+      nextDealId = Math.max(...deals.map(x=>x.id)) + 1;
+    }
+    if(ra.data && ra.data.length > 0) {
+      activities = ra.data.map(a => ({
+        id: a.id, type: a.type||'task', title: a.title||'', company: a.company||'',
+        deal: a.deal||'', due: a.due||'', status: a.status||'pending', priority: a.priority||'medium'
+      }));
+      nextActId = Math.max(...activities.map(x=>x.id)) + 1;
+    }
+  } catch(e) { console.error('Supabase load error:', e); }
 }
+
+async function saveContactToDB(data, id) {
+  const row = { company: data.company, contact: data.contact, email: data.email,
+    phone: data.phone, status: data.status, city: data.city, notes: data.notes };
+  if(id) { await supa.from('contacts').update(row).eq('id', id); }
+  else { const r = await supa.from('contacts').insert(row).select(); if(r.data) return r.data[0].id; }
+}
+async function deleteContactDB(id) { await supa.from('contacts').delete().eq('id', id); }
+
+async function saveDealDB(data, id) {
+  const row = { name: data.name, company: data.company, contact: data.contact,
+    email: data.email, amount: data.amount, prob: data.prob, stage: data.stage,
+    source: data.source, close_date: data.close, notes: data.notes, next_contact: data.nextContact };
+  if(id) { await supa.from('deals').update(row).eq('id', id); }
+  else { const r = await supa.from('deals').insert(row).select(); if(r.data) return r.data[0].id; }
+}
+async function deleteDealDB(id) { await supa.from('deals').delete().eq('id', id); }
+
+async function saveActivityDB(data, id) {
+  const row = { type: data.type, title: data.title, company: data.company,
+    deal: data.deal, due: data.due, status: data.status, priority: data.priority };
+  if(id) { await supa.from('activities').update(row).eq('id', id); }
+  else { const r = await supa.from('activities').insert(row).select(); if(r.data) return r.data[0].id; }
+}
+
+// legacy save() no-op
+function save() {}
+function load() {}
 
 // ═══════════════════════════════════════════════════════════════════════
 // NAVIGATION
@@ -887,7 +943,7 @@ function openEditModal(id) {
   buildStageOptions(d.stage);
   document.getElementById('modal-deal').classList.remove('hidden');
 }
-function saveDeal() {
+async function saveDeal() {
   const data = {
     name:        document.getElementById('mdeal-name').value.trim(),
     company:     document.getElementById('mdeal-company').value.trim(),
@@ -902,9 +958,15 @@ function saveDeal() {
     nextContact: document.getElementById('mdeal-nextcontact').value||null,
   };
   if(!data.name||!data.company){alert('Nombre y empresa son obligatorios.');return;}
-  if(editDealId) { const i=deals.findIndex(d=>d.id===editDealId); if(i>=0) deals[i]={...deals[i],...data}; }
-  else { deals.push({id:nextDealId++,...data,created:new Date().toISOString().slice(0,10)}); }
-  closeModal('modal-deal'); renderPipeline(); updateKPIs(); save();
+  if(editDealId) {
+    const i=deals.findIndex(d=>d.id===editDealId);
+    if(i>=0) deals[i]={...deals[i],...data};
+    await saveDealDB(data, editDealId);
+  } else {
+    const newId = await saveDealDB(data, null);
+    deals.push({id:newId||nextDealId++,...data,created:new Date().toISOString().slice(0,10)});
+  }
+  closeModal('modal-deal'); renderPipeline(); updateKPIs();
 }
 // Show/hide GCal button dynamically when date is typed
 function onNextContactChange() {
@@ -938,10 +1000,11 @@ function openGcal() {
   const details = encodeURIComponent(detailsLines);
   window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`, '_blank');
 }
-function deleteDeal() {
+async function deleteDeal() {
   if(!confirm('¿Eliminar este deal permanentemente?')) return;
+  await deleteDealDB(editDealId);
   deals = deals.filter(d=>d.id!==editDealId);
-  closeModal('modal-deal'); renderPipeline(); updateKPIs(); save();
+  closeModal('modal-deal'); renderPipeline(); updateKPIs();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -997,27 +1060,34 @@ function openEditContactModal(id) {
   document.getElementById('mcont-notes').value    = c.notes||'';
   document.getElementById('modal-contact').classList.remove('hidden');
 }
-function saveContact() {
+async function saveContact() {
   const data = {
     company:  document.getElementById('mcont-company').value.trim(),
     contact:  document.getElementById('mcont-contact').value.trim(),
     email:    document.getElementById('mcont-email').value.trim(),
     phone:    document.getElementById('mcont-phone').value.trim(),
-    industry: document.getElementById('mcont-industry').value.trim(),
+    industry: '',
     status:   document.getElementById('mcont-status').value,
     city:     document.getElementById('mcont-city').value.trim(),
-    source:   document.getElementById('mcont-source').value,
+    source:   '',
     notes:    document.getElementById('mcont-notes').value.trim(),
   };
   if(!data.company||!data.contact){alert('Empresa y contacto son obligatorios.');return;}
-  if(editContId){const i=contacts.findIndex(c=>c.id===editContId);if(i>=0) contacts[i]={...contacts[i],...data};}
-  else{contacts.push({id:nextContId++,...data});}
-  closeModal('modal-contact'); renderContacts(); updateKPIs(); save();
+  if(editContId){
+    const i=contacts.findIndex(c=>c.id===editContId);
+    if(i>=0) contacts[i]={...contacts[i],...data};
+    await saveContactToDB(data, editContId);
+  } else {
+    const newId = await saveContactToDB(data, null);
+    contacts.push({id:newId||nextContId++,...data});
+  }
+  closeModal('modal-contact'); renderContacts(); updateKPIs();
 }
-function deleteContact() {
+async function deleteContact() {
   if(!confirm('¿Eliminar este contacto?')) return;
+  await deleteContactDB(editContId);
   contacts=contacts.filter(c=>c.id!==editContId);
-  closeModal('modal-contact'); renderContacts(); updateKPIs(); save();
+  closeModal('modal-contact'); renderContacts(); updateKPIs();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1051,16 +1121,17 @@ function renderActivities() {
   }).join('');
   updateKPIs();
 }
-function markDone(id) {
-  const a=activities.find(x=>x.id===id); if(a) a.status='done';
-  renderActivities(); save();
+async function markDone(id) {
+  const a=activities.find(x=>x.id===id);
+  if(a) { a.status='done'; await saveActivityDB(a, id); }
+  renderActivities();
 }
 function openAddActivityModal() {
   ['title','company','deal'].forEach(f=>document.getElementById('mact-'+f).value='');
   document.getElementById('mact-due').value = new Date().toISOString().slice(0,10);
   document.getElementById('modal-activity').classList.remove('hidden');
 }
-function saveActivity() {
+async function saveActivity() {
   const data={
     type:    document.getElementById('mact-type').value,
     title:   document.getElementById('mact-title').value.trim(),
@@ -1070,8 +1141,9 @@ function saveActivity() {
     status:  'pending', priority:'medium',
   };
   if(!data.title){alert('El título es obligatorio.');return;}
-  activities.push({id:nextActId++,...data});
-  closeModal('modal-activity'); renderActivities(); save();
+  const newId = await saveActivityDB(data, null);
+  activities.push({id:newId||nextActId++,...data});
+  closeModal('modal-activity'); renderActivities();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1254,19 +1326,12 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function toggleFilter() { /* future: show/hide filter panel */ }
 
 // ─── INIT ────────────────────────────────────────────────────────────
-// Si el localStorage tiene arrays vacíos (de versiones anteriores), limpiarlos
-// para que el archivo pueda cargar los datos hardcodeados
-try {
-  const sc = localStorage.getItem('bcrm_contacts');
-  const sd = localStorage.getItem('bcrm_deals');
-  const sa = localStorage.getItem('bcrm_activities');
-  if(sc !== null && JSON.parse(sc).length === 0) localStorage.removeItem('bcrm_contacts');
-  if(sd !== null && JSON.parse(sd).length === 0) localStorage.removeItem('bcrm_deals');
-  if(sa !== null && JSON.parse(sa).length === 0) localStorage.removeItem('bcrm_activities');
-} catch(e) {}
-load();
-renderPipeline();
-updateKPIs();
+// Mostrar loading mientras carga Supabase
+document.getElementById('view-pipeline').innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:15px">⏳ Cargando datos...</div>';
+loadFromSupabase().then(() => {
+  renderPipeline();
+  updateKPIs();
+});
 </script>
 </body>
 </html>
