@@ -1,0 +1,1154 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bonsai CRM</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:#f0f4f8;color:#2d3748;overflow:hidden;height:100vh}
+.app{display:flex;height:100vh}
+
+/* ── Sidebar ── */
+.sidebar{width:225px;background:#0d1b2a;color:#fff;display:flex;flex-direction:column;flex-shrink:0;z-index:10}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
+.sb-brand{font-size:19px;font-weight:700;color:#4fc3f7;display:flex;align-items:center;gap:8px}
+.sb-plan{font-size:11px;color:rgba(255,255,255,.35);margin-top:3px;text-transform:uppercase;letter-spacing:.8px}
+.sb-section{padding:18px 0 8px;font-size:10px;font-weight:600;color:rgba(255,255,255,.3);text-transform:uppercase;letter-spacing:1px;padding-left:18px}
+.nav-item{display:flex;align-items:center;gap:11px;padding:10px 18px;cursor:pointer;font-size:14px;color:rgba(255,255,255,.65);transition:all .15s;border-left:3px solid transparent}
+.nav-item:hover{background:rgba(255,255,255,.07);color:#fff}
+.nav-item.active{background:rgba(79,195,247,.12);color:#4fc3f7;border-left-color:#4fc3f7}
+.nav-icon{width:18px;text-align:center;font-size:15px}
+.nav-badge{margin-left:auto;background:#e53935;color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px}
+.sb-footer{padding:14px 18px;border-top:1px solid rgba(255,255,255,.08);margin-top:auto}
+.sb-user{display:flex;align-items:center;gap:10px}
+.sb-avatar{width:32px;height:32px;border-radius:50%;background:#1565c0;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700}
+.sb-name{font-size:13px;font-weight:500}
+.sb-role{font-size:11px;color:rgba(255,255,255,.4)}
+
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{background:#fff;border-bottom:1px solid #e2e8f0;padding:0 24px;height:58px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-title{font-size:17px;font-weight:700;color:#1a202c}
+.topbar-sub{font-size:12px;color:#a0aec0;background:#f7fafc;padding:3px 10px;border-radius:12px}
+.topbar-actions{display:flex;gap:8px;align-items:center}
+
+/* ── KPI Strip ── */
+.kpi-strip{background:#fff;border-bottom:1px solid #e2e8f0;padding:10px 24px;display:flex;gap:0;flex-shrink:0}
+.kpi-item{flex:1;text-align:center;padding:6px 0;border-right:1px solid #f0f4f8}
+.kpi-item:last-child{border-right:none}
+.kpi-value{font-size:20px;font-weight:800;color:#1565c0}
+.kpi-value.green{color:#2e7d32}
+.kpi-value.orange{color:#ef6c00}
+.kpi-label{font-size:10px;color:#a0aec0;text-transform:uppercase;letter-spacing:.6px;margin-top:2px}
+
+/* ── Buttons ── */
+.btn{border:none;padding:8px 16px;border-radius:7px;cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.btn-primary{background:#1565c0;color:#fff}.btn-primary:hover{background:#1976d2}
+.btn-secondary{background:#fff;color:#4a5568;border:1px solid #e2e8f0}.btn-secondary:hover{background:#f7fafc}
+.btn-sm{padding:5px 11px;font-size:12px}
+.btn-danger{background:#c53030;color:#fff}.btn-danger:hover{background:#e53e3e}
+.btn-green{background:#276749;color:#fff}.btn-green:hover{background:#2f855a}
+.btn-icon{background:none;border:1px solid #e2e8f0;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:14px;color:#718096;transition:all .15s}.btn-icon:hover{background:#f7fafc;color:#2d3748}
+
+/* ── Pipeline ── */
+#view-pipeline{flex:1;overflow-x:auto;overflow-y:hidden;padding:16px 24px;display:flex;gap:14px;align-items:flex-start;min-height:0}
+.p-col{min-width:248px;width:248px;background:#edf2f7;border-radius:10px;display:flex;flex-direction:column;max-height:100%;transition:box-shadow .15s}
+.p-col:hover{box-shadow:0 4px 16px rgba(0,0,0,.08)}
+.p-col-header{padding:13px 14px 11px;border-radius:10px 10px 0 0}
+.p-col-title{font-size:13px;font-weight:700;color:#fff}
+.p-col-meta{font-size:11px;color:rgba(255,255,255,.8);margin-top:3px;display:flex;justify-content:space-between}
+.p-cards{padding:8px;overflow-y:auto;flex:1;min-height:80px;display:flex;flex-direction:column;gap:8px}
+.p-add-btn{margin:6px 8px 8px;padding:7px;text-align:center;border:2px dashed rgba(0,0,0,.15);border-radius:7px;cursor:pointer;font-size:12px;color:#a0aec0;transition:all .15s}
+.p-add-btn:hover{border-color:#1565c0;color:#1565c0;background:rgba(21,101,192,.04)}
+
+/* Deal cards */
+.deal-card{background:#fff;border-radius:8px;padding:12px 13px;box-shadow:0 1px 3px rgba(0,0,0,.07);cursor:pointer;transition:all .15s;border-left:4px solid #1565c0;position:relative}
+.deal-card:hover{box-shadow:0 4px 14px rgba(0,0,0,.12);transform:translateY(-1px)}
+.deal-card.won{border-left-color:#2e7d32;background:#f9fff9}
+.deal-card.lost{border-left-color:#9e9e9e;opacity:.65}
+.dc-name{font-size:13px;font-weight:700;color:#1a202c;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dc-company{font-size:12px;color:#718096;margin-bottom:7px;display:flex;align-items:center;gap:4px}
+.dc-amount{font-size:16px;font-weight:800;color:#1565c0}
+.dc-footer{display:flex;justify-content:space-between;align-items:center;margin-top:7px}
+.dc-prob{font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px}
+.dc-days{font-size:11px;color:#a0aec0}
+.prob-bar{height:3px;background:#e2e8f0;border-radius:2px;margin-top:6px}
+.prob-fill{height:100%;border-radius:2px}
+.dc-source{position:absolute;top:10px;right:10px;font-size:10px;color:#a0aec0}
+
+/* ── Content views ── */
+.view-content{flex:1;overflow-y:auto;padding:20px 24px;min-height:0}
+.hidden{display:none!important}
+
+/* Search / filter bar */
+.filter-bar{background:#fff;border-radius:9px;padding:12px 16px;margin-bottom:16px;display:flex;gap:10px;align-items:center;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.search-input,.form-select-sm{border:1px solid #e2e8f0;border-radius:7px;padding:8px 12px;font-size:13px;outline:none;transition:border .15s}
+.search-input{flex:1}.search-input:focus{border-color:#1565c0}
+.form-select-sm{background:#fff;cursor:pointer}
+
+/* Table */
+.table-wrap{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.crm-table{width:100%;border-collapse:collapse}
+.crm-table thead th{padding:11px 16px;text-align:left;font-size:11px;font-weight:700;color:#a0aec0;text-transform:uppercase;letter-spacing:.6px;background:#f8fafc;border-bottom:2px solid #e8edf2}
+.crm-table tbody tr{border-bottom:1px solid #f0f4f8;transition:background .1s}
+.crm-table tbody tr:hover{background:#f8fbff}
+.crm-table tbody td{padding:11px 16px;font-size:13px}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:12px;font-size:11px;font-weight:600;gap:4px}
+
+/* Activities */
+.act-card{background:#fff;border-radius:9px;padding:13px 16px;box-shadow:0 1px 3px rgba(0,0,0,.06);display:flex;align-items:center;gap:14px;margin-bottom:10px;border-left:4px solid #e2e8f0;transition:all .15s}
+.act-card:hover{box-shadow:0 3px 10px rgba(0,0,0,.1)}
+.act-card.overdue{border-left-color:#e53935}
+.act-card.pending{border-left-color:#1565c0}
+.act-card.done{border-left-color:#9e9e9e;opacity:.6}
+.act-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.act-info{flex:1}
+.act-title{font-size:14px;font-weight:600;color:#1a202c}
+.act-meta{font-size:12px;color:#718096;margin-top:3px}
+.act-due{font-size:12px;font-weight:600;white-space:nowrap}
+.act-check{cursor:pointer;font-size:20px;color:#a0aec0;transition:color .15s}.act-check:hover{color:#2e7d32}
+
+/* Dashboard */
+.dash-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.chart-card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 4px rgba(0,0,0,.05)}
+.chart-title{font-size:14px;font-weight:700;color:#2d3748;margin-bottom:14px;display:flex;align-items:center;gap:7px}
+.dash-kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.dash-kpi{background:#fff;border-radius:10px;padding:16px;box-shadow:0 1px 4px rgba(0,0,0,.05);text-align:center}
+.dash-kpi-val{font-size:24px;font-weight:800;color:#1565c0}
+.dash-kpi-lbl{font-size:11px;color:#a0aec0;text-transform:uppercase;letter-spacing:.5px;margin-top:4px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;z-index:999;backdrop-filter:blur(4px)}
+.modal{background:#fff;border-radius:14px;width:520px;max-height:88vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,.25)}
+.modal-hdr{padding:20px 24px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#fff;z-index:1}
+.modal-hdr-title{font-size:17px;font-weight:700;color:#1a202c}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:#a0aec0;line-height:1;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:6px}.modal-close:hover{background:#f7fafc;color:#2d3748}
+.modal-body{padding:20px 24px}
+.modal-ftr{padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;align-items:center}
+.ftr-left{margin-right:auto}
+.form-group{margin-bottom:15px}
+.form-label{display:block;font-size:12px;font-weight:600;color:#4a5568;margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+.form-input,.form-select{width:100%;padding:9px 12px;border:1px solid #e2e8f0;border-radius:7px;font-size:14px;outline:none;transition:border .15s;background:#fff}
+.form-input:focus,.form-select:focus{border-color:#1565c0;box-shadow:0 0 0 3px rgba(21,101,192,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+textarea.form-input{resize:vertical;min-height:70px}
+
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:#cbd5e0;border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:#a0aec0}
+
+/* Stage pills */
+.stage-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600}
+
+/* Tooltip on deal card */
+.deal-stage-selector{position:absolute;bottom:8px;right:8px;opacity:0;transition:opacity .15s}
+.deal-card:hover .deal-stage-selector{opacity:1}
+.move-btn{background:rgba(0,0,0,.06);border:none;font-size:10px;padding:3px 7px;border-radius:5px;cursor:pointer;color:#4a5568;transition:background .15s}.move-btn:hover{background:rgba(0,0,0,.12)}
+
+/* ── Próximo Contacto ── */
+.nc-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:10px;font-size:10px;font-weight:700;margin-top:5px;width:fit-content}
+.nc-future{background:#e8f5e9;color:#2e7d32}
+.nc-today{background:#fff3e0;color:#e65100;animation:pulse-orange .9s infinite alternate}
+.nc-overdue{background:#ffebee;color:#c62828;animation:pulse-red .9s infinite alternate}
+@keyframes pulse-orange{from{opacity:1}to{opacity:.6}}
+@keyframes pulse-red{from{opacity:1}to{opacity:.55}}
+
+/* Notification banner */
+.notif-banner{background:#fff8e1;border-bottom:2px solid #ffd54f;padding:8px 24px;display:flex;align-items:center;gap:10px;flex-shrink:0;font-size:13px;flex-wrap:wrap}
+.notif-banner.hidden{display:none!important}
+.notif-banner-title{font-weight:700;color:#e65100;white-space:nowrap}
+.notif-chip{display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #ffcc02;border-radius:20px;padding:3px 10px;font-size:12px;color:#5d4037;cursor:pointer;transition:background .15s;white-space:nowrap}
+.notif-chip:hover{background:#fff3e0}
+.notif-chip a{color:#1565c0;text-decoration:none;font-weight:600}
+.notif-chip a:hover{text-decoration:underline}
+.notif-dismiss{margin-left:auto;background:none;border:none;font-size:16px;cursor:pointer;color:#a0aec0;padding:0 4px}.notif-dismiss:hover{color:#2d3748}
+.btn-gcal{background:#fff;color:#1a73e8;border:1.5px solid #1a73e8;font-size:12px;padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
+.btn-gcal:hover{background:#e8f0fe}
+.btn-gcal.hidden{display:none!important}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="sb-brand">🌿 Bonsai CRM</div>
+    <div class="sb-plan">Plan Esencial</div>
+  </div>
+  <div class="sb-section">Principal</div>
+  <nav>
+    <div class="nav-item active" data-view="pipeline" onclick="switchView('pipeline')">
+      <span class="nav-icon">📊</span> Pipeline
+    </div>
+    <div class="nav-item" data-view="contacts" onclick="switchView('contacts')">
+      <span class="nav-icon">👥</span> Contactos
+    </div>
+    <div class="nav-item" data-view="activities" onclick="switchView('activities')">
+      <span class="nav-icon">✅</span> Actividades
+      <span class="nav-badge" id="overdue-badge">0</span>
+    </div>
+    <div class="nav-item" data-view="dashboard" onclick="switchView('dashboard')">
+      <span class="nav-icon">📈</span> Dashboard
+    </div>
+  </nav>
+  <div class="sb-section" style="margin-top:8px">Accesos</div>
+  <nav>
+    <div class="nav-item" onclick="openAddModal()"><span class="nav-icon">➕</span> Nuevo Deal</div>
+    <div class="nav-item" onclick="openAddContactModal()"><span class="nav-icon">👤</span> Nuevo Contacto</div>
+  </nav>
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar">A</div>
+      <div>
+        <div class="sb-name">Ariel</div>
+        <div class="sb-role">Gerente Comercial</div>
+      </div>
+    </div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<main class="main">
+
+  <!-- Topbar -->
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="topbar-title" id="view-title">Pipeline de Ventas</div>
+      <div class="topbar-sub" id="view-sub">Todos los deals activos</div>
+    </div>
+    <div class="topbar-actions">
+      <button class="btn btn-secondary btn-sm" id="btn-filter" onclick="toggleFilter()">⚡ Filtrar</button>
+      <button class="btn btn-primary" id="btn-add" onclick="openAddModal()">+ Agregar Deal</button>
+    </div>
+  </div>
+
+  <!-- KPI Strip -->
+  <div class="kpi-strip">
+    <div class="kpi-item">
+      <div class="kpi-value" id="k-active">–</div>
+      <div class="kpi-label">Deals Activos</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-value" id="k-value">–</div>
+      <div class="kpi-label">Valor Pipeline</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-value green" id="k-won">–</div>
+      <div class="kpi-label">Ganado Total</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-value orange" id="k-rate">–</div>
+      <div class="kpi-label">Tasa de Cierre</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-value" id="k-avg">–</div>
+      <div class="kpi-label">Ticket Promedio</div>
+    </div>
+    <div class="kpi-item">
+      <div class="kpi-value" id="k-contacts">–</div>
+      <div class="kpi-label">Contactos</div>
+    </div>
+  </div>
+
+  <!-- Notification Banner: Próximo Contacto -->
+  <div class="notif-banner hidden" id="notif-banner">
+    <span class="notif-banner-title">🔔 Próximos contactos:</span>
+    <span id="notif-chips"></span>
+    <button class="notif-dismiss" onclick="document.getElementById('notif-banner').classList.add('hidden')" title="Cerrar">✕</button>
+  </div>
+
+  <!-- ── PIPELINE ── -->
+  <div id="view-pipeline"></div>
+
+  <!-- ── CONTACTS ── -->
+  <div id="view-contacts" class="view-content hidden">
+    <div class="filter-bar">
+      <input id="c-search" class="search-input" type="text" placeholder="🔍 Buscar empresa, contacto, email..." oninput="renderContacts()">
+      <select id="c-industry" class="form-select-sm" onchange="renderContacts()"><option value="">Todos los rubros</option></select>
+      <select id="c-status" class="form-select-sm" onchange="renderContacts()">
+        <option value="">Todos los estados</option>
+        <option>Activo</option><option>Inactivo</option><option>Prospect</option>
+      </select>
+    </div>
+    <div class="table-wrap">
+      <table class="crm-table">
+        <thead><tr>
+          <th>EMPRESA</th><th>CONTACTO</th><th>EMAIL</th><th>TELÉFONO</th>
+          <th>RUBRO</th><th>FUENTE</th><th>ESTADO</th><th>DEALS</th><th></th>
+        </tr></thead>
+        <tbody id="contacts-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ── ACTIVITIES ── -->
+  <div id="view-activities" class="view-content hidden">
+    <div class="filter-bar">
+      <span style="font-size:13px;font-weight:600;color:#4a5568">Mostrar:</span>
+      <select id="act-filter" class="form-select-sm" onchange="renderActivities()">
+        <option value="">Todas las actividades</option>
+        <option value="overdue">⚠️ Vencidas</option>
+        <option value="pending">🔵 Pendientes</option>
+        <option value="done">✅ Realizadas</option>
+      </select>
+      <select id="act-type" class="form-select-sm" onchange="renderActivities()">
+        <option value="">Todos los tipos</option>
+        <option value="call">📞 Llamada</option>
+        <option value="meeting">🤝 Reunión</option>
+        <option value="email">📧 Email</option>
+        <option value="task">📌 Tarea</option>
+      </select>
+      <div style="margin-left:auto">
+        <button class="btn btn-primary btn-sm" onclick="openAddActivityModal()">+ Nueva actividad</button>
+      </div>
+    </div>
+    <div id="activities-wrap"></div>
+  </div>
+
+  <!-- ── DASHBOARD ── -->
+  <div id="view-dashboard" class="view-content hidden">
+    <div class="dash-kpi-grid" id="dash-kpis"></div>
+    <div class="dash-grid">
+      <div class="chart-card"><div class="chart-title">💰 Pipeline por Etapa</div><canvas id="chart-stages" height="200"></canvas></div>
+      <div class="chart-card"><div class="chart-title">🎯 Distribución de Deals</div><canvas id="chart-donut" height="200"></canvas></div>
+      <div class="chart-card"><div class="chart-title">📊 Valor por Rubro</div><canvas id="chart-industry" height="200"></canvas></div>
+      <div class="chart-card"><div class="chart-title">📡 Deals por Canal de Adquisición</div><canvas id="chart-source" height="200"></canvas></div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<!-- ═══ MODAL DEAL ═══ -->
+<div class="modal-overlay hidden" id="modal-deal">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-hdr-title" id="mdeal-title">Nuevo Deal</div>
+      <button class="modal-close" onclick="closeModal('modal-deal')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mdeal-id">
+      <div class="form-group">
+        <label class="form-label">Nombre del Deal *</label>
+        <input class="form-input" id="mdeal-name" placeholder="Ej: Rediseño web + SEO">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Empresa *</label>
+          <input class="form-input" id="mdeal-company" placeholder="Nombre de la empresa">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contacto</label>
+          <input class="form-input" id="mdeal-contact" placeholder="Nombre del contacto">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Monto ($)</label>
+          <input class="form-input" id="mdeal-amount" type="number" placeholder="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Probabilidad (%)</label>
+          <input class="form-input" id="mdeal-prob" type="number" placeholder="50" min="0" max="100">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Etapa</label>
+          <select class="form-select" id="mdeal-stage"></select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha estimada de cierre</label>
+          <input class="form-input" id="mdeal-close" type="date">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Canal de adquisición</label>
+          <select class="form-select" id="mdeal-source">
+            <option>LinkedIn</option><option>Referido</option><option>Web Orgánico</option>
+            <option>Google Ads</option><option>Email Marketing</option><option>Networking</option><option>Otro</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="mdeal-email" type="email" placeholder="contacto@empresa.com">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Próximo contacto 📅</label>
+          <input class="form-input" id="mdeal-nextcontact" type="date" title="Fecha para recordarte de contactar a este deal" onchange="onNextContactChange()">
+        </div>
+        <div class="form-group" style="display:flex;align-items:flex-end">
+          <div style="font-size:11px;color:#a0aec0;padding-bottom:10px;line-height:1.4">Recibirás una notificación en el CRM cuando llegue la fecha.</div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas</label>
+        <textarea class="form-input" id="mdeal-notes" placeholder="Información adicional, próximos pasos..."></textarea>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <div class="ftr-left">
+        <button class="btn btn-danger btn-sm hidden" id="mdeal-delete" onclick="deleteDeal()">🗑 Eliminar</button>
+      </div>
+      <button class="btn-gcal hidden" id="mdeal-gcal" onclick="openGcal()">📅 Agendar en Google Calendar</button>
+      <button class="btn btn-secondary" onclick="closeModal('modal-deal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveDeal()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL CONTACT ═══ -->
+<div class="modal-overlay hidden" id="modal-contact">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-hdr-title" id="mcont-title">Nuevo Contacto</div>
+      <button class="modal-close" onclick="closeModal('modal-contact')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mcont-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Empresa *</label>
+          <input class="form-input" id="mcont-company" placeholder="Nombre de la empresa">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contacto *</label>
+          <input class="form-input" id="mcont-contact" placeholder="Nombre y apellido">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Email</label>
+          <input class="form-input" id="mcont-email" type="email" placeholder="email@empresa.com">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Teléfono</label>
+          <input class="form-input" id="mcont-phone" placeholder="+54 11 0000-0000">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Rubro</label>
+          <input class="form-input" id="mcont-industry" placeholder="Tecnología, Salud...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Estado</label>
+          <select class="form-select" id="mcont-status">
+            <option>Activo</option><option>Prospect</option><option>Inactivo</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Ciudad</label>
+          <input class="form-input" id="mcont-city" placeholder="CABA, Córdoba...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fuente</label>
+          <select class="form-select" id="mcont-source">
+            <option>Referido</option><option>LinkedIn</option><option>Web Orgánico</option>
+            <option>Google Ads</option><option>Email Marketing</option><option>Networking</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Notas</label>
+        <textarea class="form-input" id="mcont-notes" placeholder="Información relevante del cliente..."></textarea>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <div class="ftr-left">
+        <button class="btn btn-danger btn-sm hidden" id="mcont-delete" onclick="deleteContact()">🗑 Eliminar</button>
+      </div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-contact')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveContact()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL ACTIVITY ═══ -->
+<div class="modal-overlay hidden" id="modal-activity">
+  <div class="modal">
+    <div class="modal-hdr">
+      <div class="modal-hdr-title">Nueva Actividad</div>
+      <button class="modal-close" onclick="closeModal('modal-activity')">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Tipo</label>
+          <select class="form-select" id="mact-type">
+            <option value="call">📞 Llamada</option>
+            <option value="meeting">🤝 Reunión</option>
+            <option value="email">📧 Email</option>
+            <option value="task">📌 Tarea</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Fecha límite</label>
+          <input class="form-input" id="mact-due" type="date">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Título / Descripción *</label>
+        <input class="form-input" id="mact-title" placeholder="Ej: Llamada de seguimiento con cliente">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Empresa</label>
+          <input class="form-input" id="mact-company" placeholder="Empresa relacionada">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Deal relacionado</label>
+          <input class="form-input" id="mact-deal" placeholder="Nombre del deal">
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <button class="btn btn-secondary" onclick="closeModal('modal-activity')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveActivity()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════════
+// STAGE CONFIG
+// ═══════════════════════════════════════════════════════════════════════
+const STAGES = [
+  {id:'nuevo',       name:'Nuevo Lead',       color:'#1976d2', prob:10 },
+  {id:'contactado',  name:'Contactado',        color:'#0288d1', prob:25 },
+  {id:'demo',        name:'Demo / Reunión',    color:'#00897b', prob:50 },
+  {id:'propuesta',   name:'Propuesta Enviada', color:'#ef6c00', prob:70 },
+  {id:'negociacion', name:'Negociación',       color:'#e53935', prob:85 },
+  {id:'ganado',      name:'Ganado',            color:'#2e7d32', prob:100},
+  {id:'perdido',     name:'Perdido',           color:'#9e9e9e', prob:0  },
+];
+
+const SOURCE_ICONS = {LinkedIn:'💼',Referido:'🤝','Web Orgánico':'🌐','Google Ads':'🔍','Email Marketing':'📧',Networking:'🎪',Otro:'📌'};
+const STATUS_STYLE = {
+  Activo:   {bg:'#e8f5e9',fg:'#2e7d32'},
+  Inactivo: {bg:'#f5f5f5',fg:'#757575'},
+  Prospect: {bg:'#f3e5f5',fg:'#6a1b9a'},
+};
+const ACT_CFG = {
+  call:    {icon:'📞',bg:'#e3f2fd',label:'Llamada'},
+  meeting: {icon:'🤝',bg:'#e8f5e9',label:'Reunión'},
+  email:   {icon:'📧',bg:'#f3e5f5',label:'Email'},
+  task:    {icon:'📌',bg:'#fff8e1',label:'Tarea'},
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// INITIAL DATA
+// ═══════════════════════════════════════════════════════════════════════
+let deals = [];
+
+let contacts = [];
+
+let activities = [];
+
+let nextDealId = 200, nextContId = 200, nextActId = 200;
+let editDealId = null, editContId = null;
+let currentView = 'pipeline';
+// (no external chart library — using inline canvas renderer below)
+
+// ═══════════════════════════════════════════════════════════════════════
+// STORAGE
+// ═══════════════════════════════════════════════════════════════════════
+function save() {
+  try { localStorage.setItem('bcrm_deals', JSON.stringify(deals)); localStorage.setItem('bcrm_contacts', JSON.stringify(contacts)); localStorage.setItem('bcrm_activities', JSON.stringify(activities)); } catch(e) {}
+}
+function load() {
+  try {
+    const d = localStorage.getItem('bcrm_deals'); if(d) { deals = JSON.parse(d); nextDealId = Math.max(0,...deals.map(x=>x.id))+1; }
+    const c = localStorage.getItem('bcrm_contacts'); if(c) { contacts = JSON.parse(c); nextContId = Math.max(0,...contacts.map(x=>x.id))+1; }
+    const a = localStorage.getItem('bcrm_activities'); if(a) { activities = JSON.parse(a); nextActId = Math.max(0,...activities.map(x=>x.id))+1; }
+  } catch(e) {}
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════════
+function switchView(view) {
+  currentView = view;
+  document.querySelectorAll('.nav-item[data-view]').forEach(el => el.classList.toggle('active', el.dataset.view === view));
+  ['pipeline','contacts','activities','dashboard'].forEach(v => {
+    const el = document.getElementById('view-'+v);
+    if(el) el.classList.toggle('hidden', v !== view);
+  });
+  const cfg = {
+    pipeline:   ['Pipeline de Ventas','Arrastrá los deals entre etapas','+ Agregar Deal', ()=>openAddModal()],
+    contacts:   ['Base de Contactos','Gestión de clientes y prospectos','+ Agregar Contacto', ()=>openAddContactModal()],
+    activities: ['Actividades y Seguimientos','Tareas y recordatorios pendientes','+ Nueva Actividad', ()=>openAddActivityModal()],
+    dashboard:  ['Dashboard e Insights','Métricas de rendimiento comercial', null, null],
+  };
+  const [title, sub, btnLabel, btnAction] = cfg[view] || cfg.pipeline;
+  document.getElementById('view-title').textContent = title;
+  document.getElementById('view-sub').textContent = sub;
+  const btn = document.getElementById('btn-add');
+  if(btnLabel) { btn.textContent = btnLabel; btn.onclick = btnAction; btn.classList.remove('hidden'); }
+  else { btn.classList.add('hidden'); }
+
+  if(view === 'pipeline')    renderPipeline();
+  if(view === 'contacts')    renderContacts();
+  if(view === 'activities')  renderActivities();
+  if(view === 'dashboard')   renderDashboard();
+  updateKPIs();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// KPIs
+// ═══════════════════════════════════════════════════════════════════════
+function updateKPIs() {
+  const active = deals.filter(d => !['ganado','perdido'].includes(d.stage));
+  const won    = deals.filter(d => d.stage === 'ganado');
+  const closed = deals.filter(d => ['ganado','perdido'].includes(d.stage));
+  const pipeVal = active.reduce((s,d)=>s+d.amount,0);
+  const wonVal  = won.reduce((s,d)=>s+d.amount,0);
+  const rate    = closed.length ? Math.round(won.length/closed.length*100) : 0;
+  const avg     = won.length ? Math.round(wonVal/won.length) : 0;
+  const overdue = activities.filter(a=>a.status==='overdue').length;
+
+  document.getElementById('k-active').textContent = active.length;
+  document.getElementById('k-value').textContent  = '$'+pipeVal.toLocaleString();
+  document.getElementById('k-won').textContent    = '$'+wonVal.toLocaleString();
+  document.getElementById('k-rate').textContent   = rate+'%';
+  document.getElementById('k-avg').textContent    = '$'+avg.toLocaleString();
+  document.getElementById('k-contacts').textContent = contacts.length;
+
+  const badge = document.getElementById('overdue-badge');
+  badge.textContent = overdue;
+  badge.style.display = overdue > 0 ? 'inline-block' : 'none';
+
+  renderNotifications();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PRÓXIMO CONTACTO NOTIFICATIONS
+// ═══════════════════════════════════════════════════════════════════════
+function renderNotifications() {
+  const today = new Date().toISOString().slice(0,10);
+  // Show deals where nextContact <= today (overdue or due today), not won/lost
+  const due = deals.filter(d =>
+    d.nextContact && d.nextContact <= today &&
+    !['ganado','perdido'].includes(d.stage)
+  ).sort((a,b) => a.nextContact.localeCompare(b.nextContact));
+
+  const banner = document.getElementById('notif-banner');
+  const chips  = document.getElementById('notif-chips');
+
+  if(due.length === 0) {
+    banner.classList.add('hidden');
+    return;
+  }
+  banner.classList.remove('hidden');
+  chips.innerHTML = due.map(d => {
+    const isOverdue = d.nextContact < today;
+    const lbl = isOverdue ? `⚠️ ${d.nextContact}` : '🔔 HOY';
+    const gcalUrl = gcalLink(d);
+    return `<span class="notif-chip" onclick="openEditModal(${d.id})">
+      <span style="font-weight:700;color:${isOverdue?'#c62828':'#e65100'}">${lbl}</span>
+      <span>${d.name} — ${d.company}</span>
+      <a href="${gcalUrl}" target="_blank" onclick="event.stopPropagation()" title="Abrir en Google Calendar">📅</a>
+    </span>`;
+  }).join(' ');
+}
+function gcalLink(deal) {
+  const nc = deal.nextContact;
+  if(!nc) return '#';
+  const [y,m,d] = nc.split('-').map(Number);
+  const start = nc.replace(/-/g,'');
+  const endDate = new Date(y,m-1,d+1);
+  const end = `${endDate.getFullYear()}${String(endDate.getMonth()+1).padStart(2,'0')}${String(endDate.getDate()).padStart(2,'0')}`;
+  const title = encodeURIComponent(`📞 Contactar: ${deal.name} — ${deal.company}`);
+  const detailsLines = [
+    `🏢 Empresa: ${deal.company}`,
+    deal.contact ? `👤 Contacto: ${deal.contact}` : '',
+    deal.email   ? `📧 Email: ${deal.email}`       : '',
+    deal.notes   ? `📝 Notas: ${deal.notes}`       : '',
+    '',
+    '(Generado desde Bonsai CRM)',
+  ].filter(Boolean).join('\n');
+  const details = encodeURIComponent(detailsLines);
+  return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`;
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// PIPELINE
+// ═══════════════════════════════════════════════════════════════════════
+function renderPipeline() {
+  const wrap = document.getElementById('view-pipeline');
+  wrap.innerHTML = STAGES.filter(s=>s.id!=='perdido').map(stage => {
+    const stageDeals = deals.filter(d=>d.stage===stage.id);
+    const total = stageDeals.reduce((s,d)=>s+d.amount,0);
+    const cards = stageDeals.map(deal => {
+      const pc = deal.prob>=75?'#2e7d32':deal.prob>=50?'#ef6c00':'#e53935';
+      const days = Math.floor((new Date()-new Date(deal.created))/86400000);
+      const srcIcon = SOURCE_ICONS[deal.source]||'📌';
+      // Next-contact badge
+      let ncBadge = '';
+      if(deal.nextContact) {
+        const today = new Date().toISOString().slice(0,10);
+        let cls, label;
+        if(deal.nextContact < today)      { cls='nc-overdue'; label=`⚠️ Contactar: ${deal.nextContact}`; }
+        else if(deal.nextContact===today) { cls='nc-today';   label=`🔔 Contactar HOY`; }
+        else                              { cls='nc-future';  label=`📅 ${deal.nextContact}`; }
+        ncBadge = `<div class="nc-badge ${cls}">${label}</div>`;
+      }
+      return `<div class="deal-card${stage.id==='ganado'?' won':''}" onclick="openEditModal(${deal.id})">
+        <div class="dc-source">${srcIcon}</div>
+        <div class="dc-name">${deal.name}</div>
+        <div class="dc-company">🏢 ${deal.company}</div>
+        <div class="dc-amount">$${deal.amount.toLocaleString()}</div>
+        ${ncBadge}
+        <div class="prob-bar"><div class="prob-fill" style="width:${deal.prob}%;background:${pc}"></div></div>
+        <div class="dc-footer">
+          <span class="dc-prob" style="background:${pc}22;color:${pc}">${deal.prob}%</span>
+          <span class="dc-days">⏱ ${days}d</span>
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="p-col">
+      <div class="p-col-header" style="background:${stage.color}">
+        <div class="p-col-title">${stage.name}</div>
+        <div class="p-col-meta"><span>${stageDeals.length} deal${stageDeals.length!==1?'s':''}</span><span>$${total.toLocaleString()}</span></div>
+      </div>
+      <div class="p-cards">${cards}</div>
+      <div class="p-add-btn" onclick="openAddModal('${stage.id}')">+ Agregar deal aquí</div>
+    </div>`;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// DEAL MODAL
+// ═══════════════════════════════════════════════════════════════════════
+function buildStageOptions(sel) {
+  const sel2 = document.getElementById('mdeal-stage');
+  sel2.innerHTML = STAGES.map(s=>`<option value="${s.id}"${s.id===sel?' selected':''}>${s.name}</option>`).join('');
+}
+function openAddModal(stage='nuevo') {
+  editDealId = null;
+  document.getElementById('mdeal-title').textContent = 'Nuevo Deal';
+  document.getElementById('mdeal-delete').classList.add('hidden');
+  document.getElementById('mdeal-gcal').classList.add('hidden');
+  ['name','company','contact','email','notes'].forEach(f=>document.getElementById('mdeal-'+f).value='');
+  document.getElementById('mdeal-amount').value='';
+  document.getElementById('mdeal-prob').value = STAGES.find(s=>s.id===stage)?.prob||50;
+  document.getElementById('mdeal-close').value='';
+  document.getElementById('mdeal-nextcontact').value='';
+  buildStageOptions(stage);
+  document.getElementById('modal-deal').classList.remove('hidden');
+}
+function openEditModal(id) {
+  const d = deals.find(x=>x.id===id); if(!d) return;
+  editDealId = id;
+  document.getElementById('mdeal-title').textContent = 'Editar Deal';
+  document.getElementById('mdeal-delete').classList.remove('hidden');
+  document.getElementById('mdeal-name').value        = d.name;
+  document.getElementById('mdeal-company').value     = d.company;
+  document.getElementById('mdeal-contact').value     = d.contact;
+  document.getElementById('mdeal-email').value       = d.email||'';
+  document.getElementById('mdeal-amount').value      = d.amount;
+  document.getElementById('mdeal-prob').value        = d.prob;
+  document.getElementById('mdeal-close').value       = d.close;
+  document.getElementById('mdeal-source').value      = d.source;
+  document.getElementById('mdeal-notes').value       = d.notes;
+  document.getElementById('mdeal-nextcontact').value = d.nextContact||'';
+  // Show GCal button only when there's a nextContact date
+  const gcalBtn = document.getElementById('mdeal-gcal');
+  if(d.nextContact) gcalBtn.classList.remove('hidden');
+  else gcalBtn.classList.add('hidden');
+  buildStageOptions(d.stage);
+  document.getElementById('modal-deal').classList.remove('hidden');
+}
+function saveDeal() {
+  const data = {
+    name:        document.getElementById('mdeal-name').value.trim(),
+    company:     document.getElementById('mdeal-company').value.trim(),
+    contact:     document.getElementById('mdeal-contact').value.trim(),
+    email:       document.getElementById('mdeal-email').value.trim(),
+    amount:      parseFloat(document.getElementById('mdeal-amount').value)||0,
+    prob:        parseInt(document.getElementById('mdeal-prob').value)||50,
+    stage:       document.getElementById('mdeal-stage').value,
+    close:       document.getElementById('mdeal-close').value,
+    source:      document.getElementById('mdeal-source').value,
+    notes:       document.getElementById('mdeal-notes').value.trim(),
+    nextContact: document.getElementById('mdeal-nextcontact').value||null,
+  };
+  if(!data.name||!data.company){alert('Nombre y empresa son obligatorios.');return;}
+  if(editDealId) { const i=deals.findIndex(d=>d.id===editDealId); if(i>=0) deals[i]={...deals[i],...data}; }
+  else { deals.push({id:nextDealId++,...data,created:new Date().toISOString().slice(0,10)}); }
+  closeModal('modal-deal'); renderPipeline(); updateKPIs(); save();
+}
+// Show/hide GCal button dynamically when date is typed
+function onNextContactChange() {
+  const val = document.getElementById('mdeal-nextcontact').value;
+  const btn = document.getElementById('mdeal-gcal');
+  if(val && editDealId) btn.classList.remove('hidden');
+  else btn.classList.add('hidden');
+}
+function openGcal() {
+  const nc  = document.getElementById('mdeal-nextcontact').value;
+  if(!nc) return;
+  const name    = document.getElementById('mdeal-name').value.trim()||'Deal';
+  const company = document.getElementById('mdeal-company').value.trim();
+  const contact = document.getElementById('mdeal-contact').value.trim();
+  const email   = document.getElementById('mdeal-email').value.trim();
+  const notes   = document.getElementById('mdeal-notes').value.trim();
+  // Build dates: all-day event YYYYMMDD/YYYYMMDD+1
+  const [y,m,d] = nc.split('-').map(Number);
+  const start = nc.replace(/-/g,'');
+  const endDate = new Date(y,m-1,d+1);
+  const end = `${endDate.getFullYear()}${String(endDate.getMonth()+1).padStart(2,'0')}${String(endDate.getDate()).padStart(2,'0')}`;
+  const title   = encodeURIComponent(`📞 Contactar: ${name} — ${company}`);
+  const detailsLines = [
+    `🏢 Empresa: ${company}`,
+    contact ? `👤 Contacto: ${contact}` : '',
+    email   ? `📧 Email: ${email}`       : '',
+    notes   ? `📝 Notas: ${notes}`       : '',
+    '',
+    '(Generado desde Bonsai CRM)',
+  ].filter(Boolean).join('\n');
+  const details = encodeURIComponent(detailsLines);
+  window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`, '_blank');
+}
+function deleteDeal() {
+  if(!confirm('¿Eliminar este deal permanentemente?')) return;
+  deals = deals.filter(d=>d.id!==editDealId);
+  closeModal('modal-deal'); renderPipeline(); updateKPIs(); save();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// CONTACTS
+// ═══════════════════════════════════════════════════════════════════════
+function renderContacts() {
+  const search = (document.getElementById('c-search')?.value||'').toLowerCase();
+  const ind    = document.getElementById('c-industry')?.value||'';
+  const stat   = document.getElementById('c-status')?.value||'';
+
+  const sel = document.getElementById('c-industry');
+  if(sel.children.length<=1){
+    [...new Set(contacts.map(c=>c.industry))].sort().forEach(i=>{const o=document.createElement('option');o.textContent=o.value=i;sel.appendChild(o);});
+  }
+  const list = contacts.filter(c=>
+    (!search||(c.company+c.contact+c.email).toLowerCase().includes(search)) &&
+    (!ind||c.industry===ind) && (!stat||c.status===stat)
+  );
+  document.getElementById('contacts-tbody').innerHTML = list.map(c=>{
+    const ss = STATUS_STYLE[c.status]||{bg:'#f5f5f5',fg:'#333'};
+    const dc = deals.filter(d=>d.company===c.company).length;
+    return `<tr>
+      <td><strong>${c.company}</strong><br><small style="color:#a0aec0">${c.city||''}</small></td>
+      <td>👤 ${c.contact}</td>
+      <td><a href="mailto:${c.email}" style="color:#1565c0;text-decoration:none">${c.email}</a></td>
+      <td style="color:#718096">${c.phone}</td>
+      <td><span class="badge" style="background:#e3f2fd;color:#1565c0">${c.industry}</span></td>
+      <td><span class="badge" style="background:#f7fafc;color:#4a5568">${SOURCE_ICONS[c.source]||'📌'} ${c.source||'–'}</span></td>
+      <td><span class="badge" style="background:${ss.bg};color:${ss.fg}">${c.status}</span></td>
+      <td><span class="badge" style="background:#f0f4f8;color:#2d3748;font-weight:700">${dc}</span></td>
+      <td><button class="btn btn-secondary btn-sm" onclick="openEditContactModal(${c.id})">✏️</button></td>
+    </tr>`;
+  }).join('');
+}
+function openAddContactModal() {
+  editContId = null;
+  document.getElementById('mcont-title').textContent='Nuevo Contacto';
+  document.getElementById('mcont-delete').classList.add('hidden');
+  ['company','contact','email','phone','industry','city','notes'].forEach(f=>document.getElementById('mcont-'+f).value='');
+  document.getElementById('modal-contact').classList.remove('hidden');
+}
+function openEditContactModal(id) {
+  const c=contacts.find(x=>x.id===id); if(!c) return;
+  editContId=id;
+  document.getElementById('mcont-title').textContent='Editar Contacto';
+  document.getElementById('mcont-delete').classList.remove('hidden');
+  document.getElementById('mcont-company').value  = c.company;
+  document.getElementById('mcont-contact').value  = c.contact;
+  document.getElementById('mcont-email').value    = c.email;
+  document.getElementById('mcont-phone').value    = c.phone;
+  document.getElementById('mcont-industry').value = c.industry;
+  document.getElementById('mcont-status').value   = c.status;
+  document.getElementById('mcont-city').value     = c.city||'';
+  document.getElementById('mcont-source').value   = c.source||'Referido';
+  document.getElementById('mcont-notes').value    = c.notes||'';
+  document.getElementById('modal-contact').classList.remove('hidden');
+}
+function saveContact() {
+  const data = {
+    company:  document.getElementById('mcont-company').value.trim(),
+    contact:  document.getElementById('mcont-contact').value.trim(),
+    email:    document.getElementById('mcont-email').value.trim(),
+    phone:    document.getElementById('mcont-phone').value.trim(),
+    industry: document.getElementById('mcont-industry').value.trim(),
+    status:   document.getElementById('mcont-status').value,
+    city:     document.getElementById('mcont-city').value.trim(),
+    source:   document.getElementById('mcont-source').value,
+    notes:    document.getElementById('mcont-notes').value.trim(),
+  };
+  if(!data.company||!data.contact){alert('Empresa y contacto son obligatorios.');return;}
+  if(editContId){const i=contacts.findIndex(c=>c.id===editContId);if(i>=0) contacts[i]={...contacts[i],...data};}
+  else{contacts.push({id:nextContId++,...data});}
+  closeModal('modal-contact'); renderContacts(); updateKPIs(); save();
+}
+function deleteContact() {
+  if(!confirm('¿Eliminar este contacto?')) return;
+  contacts=contacts.filter(c=>c.id!==editContId);
+  closeModal('modal-contact'); renderContacts(); updateKPIs(); save();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// ACTIVITIES
+// ═══════════════════════════════════════════════════════════════════════
+function renderActivities() {
+  const fStatus = document.getElementById('act-filter')?.value||'';
+  const fType   = document.getElementById('act-type')?.value||'';
+  const today   = new Date().toISOString().slice(0,10);
+  // Auto-mark overdue
+  activities.forEach(a=>{ if(a.status==='pending'&&a.due<today) a.status='overdue'; });
+  const list = activities.filter(a=>(!fStatus||a.status===fStatus)&&(!fType||a.type===fType));
+  list.sort((a,b)=>{
+    const order={overdue:0,pending:1,done:2};
+    return (order[a.status]||1)-(order[b.status]||1)||a.due.localeCompare(b.due);
+  });
+  document.getElementById('activities-wrap').innerHTML = list.map(act=>{
+    const cfg=ACT_CFG[act.type]||ACT_CFG.task;
+    const isDone=act.status==='done', isOver=act.status==='overdue';
+    const dueColor=isDone?'#9e9e9e':isOver?'#e53935':'#1565c0';
+    const dueLabel=isDone?'✅ Realizado':(isOver?`⚠️ Vencido: ${act.due}`:`📅 ${act.due}`);
+    return `<div class="act-card ${act.status}">
+      <div class="act-icon" style="background:${cfg.bg}">${cfg.icon}</div>
+      <div class="act-info">
+        <div class="act-title" style="${isDone?'text-decoration:line-through;color:#a0aec0':''}">${act.title}</div>
+        <div class="act-meta">🏢 ${act.company} · <span style="color:#718096">${act.deal}</span></div>
+      </div>
+      <div class="act-due" style="color:${dueColor}">${dueLabel}</div>
+      ${!isDone?`<span class="act-check" onclick="markDone(${act.id})" title="Marcar como realizado">☑️</span>`:''}
+    </div>`;
+  }).join('');
+  updateKPIs();
+}
+function markDone(id) {
+  const a=activities.find(x=>x.id===id); if(a) a.status='done';
+  renderActivities(); save();
+}
+function openAddActivityModal() {
+  ['title','company','deal'].forEach(f=>document.getElementById('mact-'+f).value='');
+  document.getElementById('mact-due').value = new Date().toISOString().slice(0,10);
+  document.getElementById('modal-activity').classList.remove('hidden');
+}
+function saveActivity() {
+  const data={
+    type:    document.getElementById('mact-type').value,
+    title:   document.getElementById('mact-title').value.trim(),
+    company: document.getElementById('mact-company').value.trim(),
+    deal:    document.getElementById('mact-deal').value.trim(),
+    due:     document.getElementById('mact-due').value,
+    status:  'pending', priority:'medium',
+  };
+  if(!data.title){alert('El título es obligatorio.');return;}
+  activities.push({id:nextActId++,...data});
+  closeModal('modal-activity'); renderActivities(); save();
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// INLINE CANVAS CHARTS  (no external libraries — works 100% offline)
+// ═══════════════════════════════════════════════════════════════════════
+const CC = {
+  _prep(id) {
+    const el = document.getElementById(id);
+    if(!el) return null;
+    const card = el.closest('.chart-card');
+    el.width  = (card ? card.clientWidth - 40 : el.parentElement.clientWidth - 40) || 300;
+    el.height = parseInt(el.getAttribute('height')) || 200;
+    const ctx = el.getContext('2d');
+    ctx.clearRect(0, 0, el.width, el.height);
+    return {el, ctx, W:el.width, H:el.height};
+  },
+
+  bar(id, labels, values, colors, opt={}) {
+    const d = this._prep(id); if(!d) return;
+    const {ctx,W,H} = d;
+    const m = {t:24, r:14, b:58, l:opt.left||54};
+    const cW=W-m.l-m.r, cH=H-m.t-m.b;
+    const max = Math.max(...values,1)*1.18;
+    const step = cW/labels.length, bW = step*0.56;
+
+    // Grid lines + Y labels
+    [0,.25,.5,.75,1].forEach(p=>{
+      const y=m.t+cH*(1-p);
+      ctx.strokeStyle='#edf2f7'; ctx.lineWidth=1;
+      ctx.beginPath(); ctx.moveTo(m.l,y); ctx.lineTo(m.l+cW,y); ctx.stroke();
+      ctx.fillStyle='#a0aec0'; ctx.font='9px system-ui'; ctx.textAlign='right';
+      ctx.fillText(opt.fmt ? opt.fmt(max*p) : Math.round(max*p).toLocaleString(), m.l-5, y+3);
+    });
+    // Axis
+    ctx.strokeStyle='#e2e8f0'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.moveTo(m.l,m.t); ctx.lineTo(m.l,m.t+cH); ctx.lineTo(m.l+cW,m.t+cH); ctx.stroke();
+
+    labels.forEach((lbl,i)=>{
+      const x = m.l+step*i+(step-bW)/2, bH=cH*(values[i]/max), y=m.t+cH-bH;
+      ctx.fillStyle = Array.isArray(colors)?colors[i%colors.length]:colors;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(x,y,bW,bH,4) : ctx.rect(x,y,bW,bH);
+      ctx.fill();
+      if(values[i]>0){
+        ctx.fillStyle='#2d3748'; ctx.font='bold 9px system-ui'; ctx.textAlign='center';
+        ctx.fillText(opt.fmt?opt.fmt(values[i]):values[i].toLocaleString(), x+bW/2, y-4);
+      }
+      // Wrap x-labels into 2 lines
+      ctx.fillStyle='#718096'; ctx.font='9px system-ui'; ctx.textAlign='center';
+      const words=lbl.split(/\s+/); let line='', lines=[];
+      words.forEach(w=>{ const t=line+(line?' ':'')+w; if(ctx.measureText(t).width>step-4&&line){lines.push(line);line=w;}else line=t; });
+      if(line) lines.push(line);
+      lines.slice(0,2).forEach((l,li)=>ctx.fillText(l, x+bW/2, m.t+cH+14+li*11));
+    });
+  },
+
+  hbar(id, labels, values, colors, opt={}) {
+    const d = this._prep(id); if(!d) return;
+    const {ctx,W,H} = d;
+    const lblW = Math.min(95,W*0.3);
+    const m = {t:6, r:52, b:6, l:lblW+10};
+    const cW=W-m.l-m.r, cH=H-m.t-m.b;
+    const max = Math.max(...values,1)*1.1;
+    const step = cH/labels.length, bH = step*0.54;
+
+    labels.forEach((lbl,i)=>{
+      const y=m.t+step*i+(step-bH)/2, w=cW*(values[i]/max);
+      ctx.fillStyle = Array.isArray(colors)?colors[i%colors.length]:colors;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(m.l,y,w,bH,4) : ctx.rect(m.l,y,w,bH);
+      ctx.fill();
+      // Label left
+      ctx.fillStyle='#4a5568'; ctx.font='10px system-ui'; ctx.textAlign='right';
+      let dl=lbl;
+      while(ctx.measureText(dl).width>lblW-4&&dl.length>3) dl=dl.slice(0,-1);
+      if(dl!==lbl) dl+='…';
+      ctx.fillText(dl, m.l-6, y+bH/2+4);
+      // Value right
+      if(values[i]>0){
+        ctx.fillStyle='#2d3748'; ctx.font='bold 10px system-ui'; ctx.textAlign='left';
+        ctx.fillText(opt.fmt?opt.fmt(values[i]):values[i].toLocaleString(), m.l+w+5, y+bH/2+4);
+      }
+    });
+  },
+
+  doughnut(id, labels, values, colors) {
+    const d = this._prep(id); if(!d) return;
+    const {ctx,W,H} = d;
+    const total = values.reduce((s,v)=>s+v,0)||1;
+    const legW=W*0.43, cx=(W-legW)/2, cy=H/2;
+    const r=Math.min(cx*.9,cy*.9), hole=r*.62;
+    let angle=-Math.PI/2;
+
+    values.forEach((v,i)=>{
+      const sweep=2*Math.PI*v/total;
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.arc(cx,cy,r,angle,angle+sweep); ctx.closePath();
+      ctx.fillStyle=colors[i%colors.length]; ctx.fill();
+      ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.stroke();
+      angle+=sweep;
+    });
+    // Hole
+    ctx.beginPath(); ctx.arc(cx,cy,hole,0,2*Math.PI);
+    ctx.fillStyle='#fff'; ctx.fill();
+    // Center text
+    ctx.fillStyle='#1a202c'; ctx.font='bold 20px system-ui'; ctx.textAlign='center';
+    ctx.fillText(total, cx, cy+7);
+    ctx.fillStyle='#a0aec0'; ctx.font='10px system-ui';
+    ctx.fillText('total', cx, cy+20);
+    // Legend
+    const legX=W-legW+8, legStartY=Math.max(12,H/2-labels.length*12);
+    labels.forEach((lbl,i)=>{
+      const y=legStartY+i*22; if(y>H-12) return;
+      ctx.fillStyle=colors[i%colors.length];
+      ctx.beginPath();
+      ctx.roundRect?ctx.roundRect(legX,y,11,11,3):ctx.rect(legX,y,11,11); ctx.fill();
+      ctx.fillStyle='#4a5568'; ctx.font='10px system-ui'; ctx.textAlign='left';
+      ctx.fillText(`${lbl} (${values[i]})`, legX+15, y+9);
+    });
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════
+function renderDashboard() {
+  const active=deals.filter(d=>!['ganado','perdido'].includes(d.stage));
+  const won=deals.filter(d=>d.stage==='ganado');
+  const closed=deals.filter(d=>['ganado','perdido'].includes(d.stage));
+  const wonVal=won.reduce((s,d)=>s+d.amount,0);
+  const rate=closed.length?Math.round(won.length/closed.length*100):0;
+
+  document.getElementById('dash-kpis').innerHTML=`
+    <div class="dash-kpi"><div class="dash-kpi-val" style="color:#1565c0">${active.length}</div><div class="dash-kpi-lbl">Deals Activos</div></div>
+    <div class="dash-kpi"><div class="dash-kpi-val" style="color:#2e7d32">$${wonVal.toLocaleString()}</div><div class="dash-kpi-lbl">Total Ganado</div></div>
+    <div class="dash-kpi"><div class="dash-kpi-val" style="color:#ef6c00">${rate}%</div><div class="dash-kpi-lbl">Tasa de Cierre</div></div>
+    <div class="dash-kpi"><div class="dash-kpi-val" style="color:#6a1b9a">${contacts.length}</div><div class="dash-kpi-lbl">Contactos</div></div>
+  `;
+
+  // Let the DOM paint the KPI grid before measuring canvas parents
+  requestAnimationFrame(()=>{
+    const fmtK = v => v>=1000 ? '$'+Math.round(v/1000)+'k' : '$'+Math.round(v);
+
+    // Chart 1: Pipeline por etapa — bar
+    const visS=STAGES.filter(s=>s.id!=='perdido');
+    CC.bar('chart-stages',
+      visS.map(s=>s.name),
+      visS.map(s=>deals.filter(d=>d.stage===s.id).reduce((t,d)=>t+d.amount,0)),
+      visS.map(s=>s.color),
+      {fmt:fmtK, left:50}
+    );
+
+    // Chart 2: Distribución de deals — doughnut
+    const ds=STAGES.map(s=>({n:s.name,c:s.color,v:deals.filter(d=>d.stage===s.id).length})).filter(x=>x.v>0);
+    CC.doughnut('chart-donut', ds.map(d=>d.n), ds.map(d=>d.v), ds.map(d=>d.c));
+
+    // Chart 3: Valor por rubro — horizontal bar
+    const inds=[...new Set(contacts.map(c=>c.industry))];
+    const indData=inds.map(ind=>({ind,val:deals.filter(d=>contacts.find(c=>c.company===d.company)?.industry===ind).reduce((s,d)=>s+d.amount,0)})).sort((a,b)=>b.val-a.val);
+    CC.hbar('chart-industry', indData.map(x=>x.ind), indData.map(x=>x.val),
+      ['#1565c0','#1976d2','#1e88e5','#42a5f5','#64b5f6','#90caf9'],
+      {fmt:fmtK}
+    );
+
+    // Chart 4: Deals por canal — bar
+    const srcMap={}; deals.forEach(d=>srcMap[d.source]=(srcMap[d.source]||0)+1);
+    const srcData=Object.entries(srcMap).sort((a,b)=>b[1]-a[1]);
+    CC.bar('chart-source',
+      srcData.map(x=>x[0]), srcData.map(x=>x[1]),
+      ['#1976d2','#00897b','#ef6c00','#6a1b9a','#e53935','#0288d1','#f57c00'],
+      {left:30}
+    );
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// UTIL
+// ═══════════════════════════════════════════════════════════════════════
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
+function toggleFilter() { /* future: show/hide filter panel */ }
+
+// ─── INIT ────────────────────────────────────────────────────────────
+const DATA_VERSION = 'v2_clean';
+if(localStorage.getItem('bcrm_version') !== DATA_VERSION) {
+  localStorage.removeItem('bcrm_deals');
+  localStorage.removeItem('bcrm_contacts');
+  localStorage.removeItem('bcrm_activities');
+  localStorage.setItem('bcrm_version', DATA_VERSION);
+}
+load();
+renderPipeline();
+updateKPIs();
+</script>
+</body>
+</html>
