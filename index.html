@@ -1254,6 +1254,16 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function toggleFilter() { /* future: show/hide filter panel */ }
 
 // ─── INIT ────────────────────────────────────────────────────────────
+// Si el localStorage tiene arrays vacíos (de versiones anteriores), limpiarlos
+// para que el archivo pueda cargar los datos hardcodeados
+try {
+  const sc = localStorage.getItem('bcrm_contacts');
+  const sd = localStorage.getItem('bcrm_deals');
+  const sa = localStorage.getItem('bcrm_activities');
+  if(sc !== null && JSON.parse(sc).length === 0) localStorage.removeItem('bcrm_contacts');
+  if(sd !== null && JSON.parse(sd).length === 0) localStorage.removeItem('bcrm_deals');
+  if(sa !== null && JSON.parse(sa).length === 0) localStorage.removeItem('bcrm_activities');
+} catch(e) {}
 load();
 renderPipeline();
 updateKPIs();
