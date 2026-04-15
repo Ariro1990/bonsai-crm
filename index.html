@@ -922,7 +922,7 @@ function openAddModal(stage='nuevo') {
   document.getElementById('modal-deal').classList.remove('hidden');
 }
 function openEditModal(id) {
-  const d = deals.find(x=>x.id===id); if(!d) return;
+  const d = deals.find(x=>x.id==id); if(!d) return;
   editDealId = id;
   document.getElementById('mdeal-title').textContent = 'Editar Deal';
   document.getElementById('mdeal-delete').classList.remove('hidden');
@@ -1035,11 +1035,11 @@ function openAddContactModal() {
   editContId = null;
   document.getElementById('mcont-title').textContent='Nuevo Contacto';
   document.getElementById('mcont-delete').classList.add('hidden');
-  ['company','contact','email','phone','industry','city','notes'].forEach(f=>document.getElementById('mcont-'+f).value='');
+  ['company','contact','email','phone','city','notes'].forEach(f=>{const el=document.getElementById('mcont-'+f); if(el) el.value='';});
   document.getElementById('modal-contact').classList.remove('hidden');
 }
 function openEditContactModal(id) {
-  const c=contacts.find(x=>x.id===id); if(!c) return;
+  const c=contacts.find(x=>x.id==id); if(!c) return;
   editContId=id;
   document.getElementById('mcont-title').textContent='Editar Contacto';
   document.getElementById('mcont-delete').classList.remove('hidden');
