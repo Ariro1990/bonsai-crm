@@ -1254,14 +1254,6 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function toggleFilter() { /* future: show/hide filter panel */ }
 
 // ─── INIT ────────────────────────────────────────────────────────────
-const DATA_VERSION = 'v4_ui';
-if(localStorage.getItem('bcrm_version') !== DATA_VERSION) {
-  localStorage.removeItem('bcrm_deals');
-  localStorage.removeItem('bcrm_contacts');
-  localStorage.removeItem('bcrm_activities');
-  localStorage.removeItem('bcrm_stages');
-  localStorage.setItem('bcrm_version', DATA_VERSION);
-}
 load();
 renderPipeline();
 updateKPIs();
