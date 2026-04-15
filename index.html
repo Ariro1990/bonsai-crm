@@ -602,9 +602,9 @@ function save() {
 }
 function load() {
   try {
-    const d = localStorage.getItem('bcrm_deals'); if(d) { deals = JSON.parse(d); nextDealId = Math.max(0,...deals.map(x=>x.id))+1; }
-    const c = localStorage.getItem('bcrm_contacts'); if(c) { contacts = JSON.parse(c); nextContId = Math.max(0,...contacts.map(x=>x.id))+1; }
-    const a = localStorage.getItem('bcrm_activities'); if(a) { activities = JSON.parse(a); nextActId = Math.max(0,...activities.map(x=>x.id))+1; }
+    const d = localStorage.getItem('bcrm_deals'); if(d) { const parsed = JSON.parse(d); if(parsed.length > 0) { deals = parsed; nextDealId = Math.max(0,...deals.map(x=>x.id))+1; } }
+    const c = localStorage.getItem('bcrm_contacts'); if(c) { const parsed = JSON.parse(c); if(parsed.length > 0) { contacts = parsed; nextContId = Math.max(0,...contacts.map(x=>x.id))+1; } }
+    const a = localStorage.getItem('bcrm_activities'); if(a) { const parsed = JSON.parse(a); if(parsed.length > 0) { activities = parsed; nextActId = Math.max(0,...activities.map(x=>x.id))+1; } }
     const s = localStorage.getItem('bcrm_stages'); if(s) { STAGES = JSON.parse(s); }
   } catch(e) {}
 }
