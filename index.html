@@ -1012,16 +1012,10 @@ async function deleteDeal() {
 // ═══════════════════════════════════════════════════════════════════════
 function renderContacts() {
   const search = (document.getElementById('c-search')?.value||'').toLowerCase();
-  const ind    = document.getElementById('c-industry')?.value||'';
   const stat   = document.getElementById('c-status')?.value||'';
-
-  const sel = document.getElementById('c-industry');
-  if(sel.children.length<=1){
-    [...new Set(contacts.map(c=>c.industry))].sort().forEach(i=>{const o=document.createElement('option');o.textContent=o.value=i;sel.appendChild(o);});
-  }
   const list = contacts.filter(c=>
     (!search||(c.company+c.contact+c.email).toLowerCase().includes(search)) &&
-    (!ind||c.industry===ind) && (!stat||c.status===stat)
+    (!stat||c.status===stat)
   );
   document.getElementById('contacts-tbody').innerHTML = list.map(c=>{
     const ss = STATUS_STYLE[c.status]||{bg:'#f5f5f5',fg:'#333'};
