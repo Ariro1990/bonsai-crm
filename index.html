@@ -170,6 +170,18 @@ textarea.form-input{resize:vertical;min-height:70px}
 .btn-gcal{background:#fff;color:#1a73e8;border:1.5px solid #1a73e8;font-size:12px;padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
 .btn-gcal:hover{background:#e8f0fe}
 .btn-gcal.hidden{display:none!important}
+
+/* ── Stage manager ── */
+.p-col-header{position:relative}
+.p-col-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.p-col:hover .p-col-actions{opacity:1}
+.p-col-btn{background:rgba(255,255,255,.25);border:none;border-radius:5px;cursor:pointer;font-size:12px;padding:3px 7px;color:#fff;transition:background .15s;line-height:1}
+.p-col-btn:hover{background:rgba(255,255,255,.45)}
+.p-col-add{min-width:200px;width:200px;background:#f0f4f8;border-radius:10px;border:2px dashed #cbd5e0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .15s;padding:20px 14px}
+.p-col-add:hover{border-color:#1565c0;background:#ebf4ff}
+.p-col-add-icon{font-size:24px;color:#a0aec0}
+.p-col-add-label{font-size:12px;color:#a0aec0;font-weight:600}
+.p-col-add:hover .p-col-add-icon,.p-col-add:hover .p-col-add-label{color:#1565c0}
 </style>
 </head>
 <body>
@@ -520,11 +532,46 @@ textarea.form-input{resize:vertical;min-height:70px}
   </div>
 </div>
 
+<!-- ═══ MODAL STAGE ═══ -->
+<div class="modal-overlay hidden" id="modal-stage">
+  <div class="modal" style="width:400px">
+    <div class="modal-hdr">
+      <div class="modal-hdr-title" id="mstage-title">Nueva Etapa</div>
+      <button class="modal-close" onclick="closeModal('modal-stage')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mstage-id">
+      <div class="form-group">
+        <label class="form-label">Nombre de la etapa *</label>
+        <input class="form-input" id="mstage-name" placeholder="Ej: Seguimiento, Cierre, etc.">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Probabilidad (%)</label>
+          <input class="form-input" id="mstage-prob" type="number" min="0" max="100" placeholder="50">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="mstage-colors"></div>
+          <input type="hidden" id="mstage-color" value="#1976d2">
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <div class="ftr-left">
+        <button class="btn btn-danger btn-sm hidden" id="mstage-delete" onclick="deleteStage()">🗑 Eliminar etapa</button>
+      </div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-stage')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveStage()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════════
 // STAGE CONFIG
 // ═══════════════════════════════════════════════════════════════════════
-const STAGES = [
+let STAGES = [
   {id:'nuevo',       name:'Nuevo Lead',       color:'#1976d2', prob:10 },
   {id:'contactado',  name:'Contactado',        color:'#0288d1', prob:25 },
   {id:'demo',        name:'Demo / Reunión',    color:'#00897b', prob:50 },
@@ -533,6 +580,7 @@ const STAGES = [
   {id:'ganado',      name:'Ganado',            color:'#2e7d32', prob:100},
   {id:'perdido',     name:'Perdido',           color:'#9e9e9e', prob:0  },
 ];
+const STAGE_COLORS = ['#1976d2','#0288d1','#00897b','#ef6c00','#e53935','#8e24aa','#f57c00','#0097a7','#5d4037','#546e7a'];
 
 const SOURCE_ICONS = {LinkedIn:'💼',Referido:'🤝','Web Orgánico':'🌐','Google Ads':'🔍','Email Marketing':'📧',Networking:'🎪',Otro:'📌'};
 const STATUS_STYLE = {
@@ -552,11 +600,11 @@ const ACT_CFG = {
 // ═══════════════════════════════════════════════════════════════════════
 let deals = [];
 
-let contacts = [];
+let contacts = [{"id": 1, "company": "American System", "contact": "Nicole", "email": "milletnicole33@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 2, "company": "Daniel Preizler", "contact": "Daniel", "email": "danielpreizler@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 3, "company": "English Point", "contact": "Martina", "email": "martinanogueirap@englishpoint.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 4, "company": "Uventech", "contact": "Dario", "email": "dario.umaschi@uventech.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 5, "company": "Claudia Verde", "contact": "Claudia", "email": "claudiaverde@claudiaverde.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 6, "company": "Torsion", "contact": "Gabe", "email": "grodriguez@torsionxsuramerica.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 7, "company": "Lara del Mar", "contact": "Marco", "email": "info@perfumeslaradelmar.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 8, "company": "Aguai", "contact": "Juan Carlos", "email": "aguaicolon@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 9, "company": "Mactoon", "contact": "Adriana", "email": "adrianacanabal@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 10, "company": "Patagonia Spanish Experience", "contact": "Sasha", "email": "sashafraser@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 11, "company": "Infocus", "contact": "Edu", "email": "evinocur@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 12, "company": "Carupa", "contact": "Federico", "email": "ventas.sanitarioscarupa@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 13, "company": "Espacio Arevalo", "contact": "Natacha", "email": "natachasixto@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 14, "company": "Meip", "contact": "Camila", "email": "csieira@meipingenieria.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 15, "company": "Refritec", "contact": "Magali", "email": "amorosomagali@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 16, "company": "Pipeflex", "contact": "Leo", "email": "leonardolapilli@pipeflex.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 17, "company": "Gstation", "contact": "Sofia", "email": "sofiafd@gstationstudio.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 18, "company": "CTSYS", "contact": "Monica", "email": "justiciaturistica@yahoo.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 19, "company": "Estudio Juridico Reali", "contact": "Nestor", "email": "nestorreali@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 20, "company": "GMP", "contact": "Juan Manuel", "email": "mercadejm@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 21, "company": "Puerta Azul Herrajes", "contact": "Leonardo", "email": "vissanileonardo@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 22, "company": "Polvora", "contact": "Pablo", "email": "polvorayespumacotillon@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 23, "company": "Wave RH", "contact": "Cristina", "email": "rrhh.crismartinez@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 24, "company": "Fábrica Deportiva", "contact": "Gabriel", "email": "gabrielkraizer@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 25, "company": "Residencia Moreto", "contact": "Lucas", "email": "", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 26, "company": "Capo Ingenieria", "contact": "Lara", "email": "l.giumelli@hotmail.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 27, "company": "Carpinteria Bilbao", "contact": "Belen", "email": "", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 28, "company": "Control V", "contact": "Silvina", "email": "cataldoabogados@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 29, "company": "Editorial Argenta", "contact": "Alex", "email": "info@editorialargenta.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 30, "company": "Escribania Mariani", "contact": "Jorge", "email": "escribaniamariani@yahoo.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 31, "company": "Estudio Contable Gulli Chacur", "contact": "Florencia", "email": "florencia@gullichacur.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 32, "company": "Futbol Queens", "contact": "Demian", "email": "demiankrynski@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 33, "company": "Garcia Despachantes", "contact": "Diego", "email": "garciadespachantes@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 34, "company": "Queen Drinks", "contact": "Fabian", "email": "queendrinks@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 35, "company": "TP Consulting", "contact": "Martin", "email": "martin.simian@tpconsulting.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 36, "company": "Quick Color", "contact": "Nicolas", "email": "nico@color.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 37, "company": "Travel Paz", "contact": "Paz", "email": "travelpaz@live.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 38, "company": "Frey", "contact": "Lucero", "email": "luceroc@frey.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 39, "company": "Punto Sur", "contact": "Nestor", "email": "nestor.sierrafernandez@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 40, "company": "Estancia Razul", "contact": "Noel", "email": "noelvaeza@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 41, "company": "Bechlab", "contact": "Leandro", "email": "leandro@bechlab.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 42, "company": "Motorhome Time", "contact": "Gabriel", "email": "gabriel@motorhometime.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 43, "company": "Schroeder", "contact": "Lucia", "email": "lirazusta@familiaschroeder.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 44, "company": "Vaisa Riego", "contact": "Leandro", "email": "lecarmona2@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 45, "company": "Boggero", "contact": "Silvina", "email": "arq.silvina.boggero@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 46, "company": "MYV Logistcs", "contact": "Walter", "email": "info@myvlogistics.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 47, "company": "Pallet Sustentable", "contact": "Natalia", "email": "palletsustentable@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 48, "company": "Estudio Garillo", "contact": "Maxi", "email": "info@estudiogarillo.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 49, "company": "Estudio Juridico PGW", "contact": "Priscila", "email": "estudiopgw@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 50, "company": "Airkraw", "contact": "Dario", "email": "dariokr@airkraw.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 51, "company": "Lotipenso Cabañas", "contact": "Carina", "email": "cab1993@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 52, "company": "Ingles en BA", "contact": "Mercedes", "email": "info@inglesenbuenosaires.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 53, "company": "Las Lagunas Apart", "contact": "Diego", "email": "diegopoy@yahoo.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 54, "company": "Estudio Abolsky", "contact": "Hernan", "email": "habolsky@estudioabolsky.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 55, "company": "Expreso NL", "contact": "Nicolas", "email": "nl.logistica1@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 56, "company": "Gladys y Dinicola", "contact": "Gladys", "email": "gladysgomez@fibertel.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 57, "company": "Agrovillagra", "contact": "Dario", "email": "agrovillagra@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 58, "company": "Milena Caserola", "contact": "Matias", "email": "prensa.caserola@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 59, "company": "Gea Nutricion", "contact": "Guido", "email": "gea.nutricionista@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 60, "company": "MEK Comunicacion", "contact": "Mercedes", "email": "info@mekcomunicacion.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 61, "company": "Matiz", "contact": "Sol", "email": "scapristo@gigot.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 62, "company": "Fumigadora San Miguel", "contact": "Matias", "email": "sanmiguelfumigadora@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 63, "company": "DKP", "contact": "Eugenia", "email": "eugenia@dkp.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 64, "company": "Accontenidos", "contact": "Cristian", "email": "carganaraz@accontenidos.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 65, "company": "Gestion Post", "contact": "Juan", "email": "juan.izquierdo@dixtra.co", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 66, "company": "Wake", "contact": "Micaela y Stefi", "email": "hola@wakecomunicacion.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 67, "company": "Espacio Velasco", "contact": "Fernando Nasuti", "email": "fermatias1391@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 68, "company": "Idearser", "contact": "Sol", "email": "soltar82@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 69, "company": "Justech", "contact": "Soledad", "email": "soledadescobar@yahoo.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 70, "company": "Rescate Historico", "contact": "Walter", "email": "walterhernandavis@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 71, "company": "Leben Salud", "contact": "Lourdes", "email": "lourdesturi@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 72, "company": "RAD", "contact": "Javier", "email": "", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 73, "company": "Roomie", "contact": "Pope", "email": "hello@roomiedesign.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 74, "company": "Grupo Linch", "contact": "Martin", "email": "info@grupolinch.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 75, "company": "Kiki Pepe", "contact": "Daniela", "email": "hola@masitascr.com", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 76, "company": "Logos Argentina", "contact": "Nicolas", "email": "nicolas@nueve.la", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 77, "company": "Ztech", "contact": "Ezequiel", "email": "ezequiel@ztech.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}, {"id": 78, "company": "St Brendans", "contact": "Lautaro", "email": "", "phone": "", "industry": "", "status": "Activo", "source": "Base DonWeb", "city": "", "notes": ""}];
 
 let activities = [];
 
-let nextDealId = 200, nextContId = 200, nextActId = 200;
+let nextDealId = 200, nextContId = 79, nextActId = 200;
 let editDealId = null, editContId = null;
 let currentView = 'pipeline';
 // (no external chart library — using inline canvas renderer below)
@@ -565,13 +613,14 @@ let currentView = 'pipeline';
 // STORAGE
 // ═══════════════════════════════════════════════════════════════════════
 function save() {
-  try { localStorage.setItem('bcrm_deals', JSON.stringify(deals)); localStorage.setItem('bcrm_contacts', JSON.stringify(contacts)); localStorage.setItem('bcrm_activities', JSON.stringify(activities)); } catch(e) {}
+  try { localStorage.setItem('bcrm_deals', JSON.stringify(deals)); localStorage.setItem('bcrm_contacts', JSON.stringify(contacts)); localStorage.setItem('bcrm_activities', JSON.stringify(activities)); localStorage.setItem('bcrm_stages', JSON.stringify(STAGES)); } catch(e) {}
 }
 function load() {
   try {
     const d = localStorage.getItem('bcrm_deals'); if(d) { deals = JSON.parse(d); nextDealId = Math.max(0,...deals.map(x=>x.id))+1; }
     const c = localStorage.getItem('bcrm_contacts'); if(c) { contacts = JSON.parse(c); nextContId = Math.max(0,...contacts.map(x=>x.id))+1; }
     const a = localStorage.getItem('bcrm_activities'); if(a) { activities = JSON.parse(a); nextActId = Math.max(0,...activities.map(x=>x.id))+1; }
+    const s = localStorage.getItem('bcrm_stages'); if(s) { STAGES = JSON.parse(s); }
   } catch(e) {}
 }
 
@@ -687,14 +736,14 @@ function gcalLink(deal) {
 // ═══════════════════════════════════════════════════════════════════════
 function renderPipeline() {
   const wrap = document.getElementById('view-pipeline');
-  wrap.innerHTML = STAGES.filter(s=>s.id!=='perdido').map(stage => {
+  const cols = STAGES.filter(s=>s.id!=='perdido').map(stage => {
     const stageDeals = deals.filter(d=>d.stage===stage.id);
     const total = stageDeals.reduce((s,d)=>s+d.amount,0);
+    const isProtected = ['ganado','perdido'].includes(stage.id);
     const cards = stageDeals.map(deal => {
       const pc = deal.prob>=75?'#2e7d32':deal.prob>=50?'#ef6c00':'#e53935';
       const days = Math.floor((new Date()-new Date(deal.created))/86400000);
       const srcIcon = SOURCE_ICONS[deal.source]||'📌';
-      // Next-contact badge
       let ncBadge = '';
       if(deal.nextContact) {
         const today = new Date().toISOString().slice(0,10);
@@ -717,15 +766,98 @@ function renderPipeline() {
         </div>
       </div>`;
     }).join('');
+    const actionBtns = `<div class="p-col-actions">
+      <button class="p-col-btn" onclick="event.stopPropagation();openEditStageModal('${stage.id}')" title="Editar etapa">✏️</button>
+      ${!isProtected ? `<button class="p-col-btn" onclick="event.stopPropagation();confirmDeleteStage('${stage.id}')" title="Eliminar etapa">🗑</button>` : ''}
+    </div>`;
     return `<div class="p-col">
       <div class="p-col-header" style="background:${stage.color}">
+        ${actionBtns}
         <div class="p-col-title">${stage.name}</div>
         <div class="p-col-meta"><span>${stageDeals.length} deal${stageDeals.length!==1?'s':''}</span><span>$${total.toLocaleString()}</span></div>
       </div>
       <div class="p-cards">${cards}</div>
       <div class="p-add-btn" onclick="openAddModal('${stage.id}')">+ Agregar deal aquí</div>
     </div>`;
-  }).join('');
+  });
+  // Botón para agregar nueva columna
+  cols.push(`<div class="p-col-add" onclick="openAddStageModal()">
+    <div class="p-col-add-icon">＋</div>
+    <div class="p-col-add-label">Nueva etapa</div>
+  </div>`);
+  wrap.innerHTML = cols.join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// STAGE MANAGER
+// ═══════════════════════════════════════════════════════════════════════
+function buildColorPicker(selectedColor) {
+  const wrap = document.getElementById('mstage-colors');
+  wrap.innerHTML = STAGE_COLORS.map(c =>
+    `<div onclick="selectStageColor('${c}')" style="width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${c===selectedColor?'#1a202c':'transparent'};transition:border .15s" title="${c}"></div>`
+  ).join('');
+  document.getElementById('mstage-color').value = selectedColor;
+}
+function selectStageColor(color) {
+  document.getElementById('mstage-color').value = color;
+  buildColorPicker(color);
+}
+function openAddStageModal() {
+  document.getElementById('mstage-title').textContent = 'Nueva Etapa';
+  document.getElementById('mstage-id').value = '';
+  document.getElementById('mstage-name').value = '';
+  document.getElementById('mstage-prob').value = '50';
+  document.getElementById('mstage-delete').classList.add('hidden');
+  buildColorPicker(STAGE_COLORS[0]);
+  document.getElementById('modal-stage').classList.remove('hidden');
+}
+function openEditStageModal(id) {
+  const s = STAGES.find(x=>x.id===id); if(!s) return;
+  document.getElementById('mstage-title').textContent = 'Editar Etapa';
+  document.getElementById('mstage-id').value = id;
+  document.getElementById('mstage-name').value = s.name;
+  document.getElementById('mstage-prob').value = s.prob;
+  const isProtected = ['ganado','perdido'].includes(id);
+  if(isProtected) document.getElementById('mstage-delete').classList.add('hidden');
+  else document.getElementById('mstage-delete').classList.remove('hidden');
+  buildColorPicker(s.color);
+  document.getElementById('modal-stage').classList.remove('hidden');
+}
+function saveStage() {
+  const id    = document.getElementById('mstage-id').value;
+  const name  = document.getElementById('mstage-name').value.trim();
+  const prob  = parseInt(document.getElementById('mstage-prob').value)||50;
+  const color = document.getElementById('mstage-color').value;
+  if(!name) { alert('El nombre es obligatorio.'); return; }
+  if(id) {
+    // Editar existente
+    const i = STAGES.findIndex(s=>s.id===id);
+    if(i>=0) STAGES[i] = {...STAGES[i], name, prob, color};
+  } else {
+    // Nueva etapa — insertarla antes de 'ganado'
+    const newId = 'stage_' + Date.now();
+    const idx = STAGES.findIndex(s=>s.id==='ganado');
+    STAGES.splice(idx, 0, {id:newId, name, color, prob});
+  }
+  closeModal('modal-stage');
+  renderPipeline();
+  save();
+}
+function confirmDeleteStage(id) {
+  const s = STAGES.find(x=>x.id===id); if(!s) return;
+  const count = deals.filter(d=>d.stage===id).length;
+  const msg = count > 0
+    ? `La etapa "${s.name}" tiene ${count} deal(s). ¿Eliminarla? Los deals pasarán a "Nuevo Lead".`
+    : `¿Eliminar la etapa "${s.name}"?`;
+  if(!confirm(msg)) return;
+  deals.forEach(d=>{ if(d.stage===id) d.stage='nuevo'; });
+  STAGES = STAGES.filter(x=>x.id!==id);
+  renderPipeline(); updateKPIs(); save();
+}
+function deleteStage() {
+  const id = document.getElementById('mstage-id').value;
+  closeModal('modal-stage');
+  confirmDeleteStage(id);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1139,11 +1271,12 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function toggleFilter() { /* future: show/hide filter panel */ }
 
 // ─── INIT ────────────────────────────────────────────────────────────
-const DATA_VERSION = 'v2_clean';
+const DATA_VERSION = 'v3_contacts';
 if(localStorage.getItem('bcrm_version') !== DATA_VERSION) {
   localStorage.removeItem('bcrm_deals');
   localStorage.removeItem('bcrm_contacts');
   localStorage.removeItem('bcrm_activities');
+  localStorage.removeItem('bcrm_stages');
   localStorage.setItem('bcrm_version', DATA_VERSION);
 }
 load();
