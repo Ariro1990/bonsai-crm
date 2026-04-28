@@ -170,40 +170,6 @@ textarea.form-input{resize:vertical;min-height:70px}
 .btn-gcal{background:#fff;color:#1a73e8;border:1.5px solid #1a73e8;font-size:12px;padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
 .btn-gcal:hover{background:#e8f0fe}
 .btn-gcal.hidden{display:none!important}
-
-/* ── Autocomplete empresa ── */
-.autocomplete-wrap{position:relative}
-.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #1565c0;border-top:none;border-radius:0 0 7px 7px;z-index:200;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12)}
-.autocomplete-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f0f4f8;display:flex;flex-direction:column;gap:2px}
-.autocomplete-item:last-child{border-bottom:none}
-.autocomplete-item:hover,.autocomplete-item.selected{background:#e8f0fe}
-.autocomplete-item strong{color:#1a202c}
-.autocomplete-item small{color:#a0aec0;font-size:11px}
-
-/* ── Historial de contactos ── */
-.hist-section{border-top:2px solid #f0f4f8;margin-top:20px;padding-top:18px}
-.hist-section-title{font-size:13px;font-weight:700;color:#2d3748;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;gap:8px}
-.hist-entry{background:#f8fafc;border-radius:8px;padding:12px 14px;margin-bottom:8px;border-left:3px solid #1565c0;position:relative}
-.hist-entry-header{display:flex;align-items:center;gap:8px;margin-bottom:5px}
-.hist-entry-date{font-size:11px;font-weight:700;color:#1565c0;white-space:nowrap}
-.hist-entry-service{font-size:11px;font-weight:600;background:#e3f2fd;color:#1565c0;padding:2px 8px;border-radius:10px}
-.hist-entry-text{font-size:13px;color:#2d3748;line-height:1.5}
-.hist-entry-comment{font-size:12px;color:#718096;margin-top:5px;font-style:italic}
-.hist-entry-del{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:13px;color:#cbd5e0;transition:color .15s}
-.hist-entry-del:hover{color:#e53935}
-.hist-add-form{background:#fff;border:1px dashed #cbd5e0;border-radius:8px;padding:14px;margin-top:8px}
-.hist-add-form .form-row{margin-bottom:10px}
-
-/* ── Accesos web ── */
-.accesos-section{border-top:2px solid #f0f4f8;margin-top:20px;padding-top:18px}
-.accesos-section-title{font-size:13px;font-weight:700;color:#2d3748;margin-bottom:12px;display:flex;align-items:center;gap:8px}
-.password-wrap{position:relative}
-.password-wrap .form-input{padding-right:40px}
-.btn-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#a0aec0;line-height:1}
-.btn-eye:hover{color:#4a5568}
-
-/* ── Modal wide (para contacto con historial) ── */
-.modal-wide{width:640px}
 </style>
 </head>
 <body>
@@ -442,7 +408,7 @@ textarea.form-input{resize:vertical;min-height:70px}
 
 <!-- ═══ MODAL CONTACT ═══ -->
 <div class="modal-overlay hidden" id="modal-contact">
-  <div class="modal modal-wide">
+  <div class="modal">
     <div class="modal-hdr">
       <div class="modal-hdr-title" id="mcont-title">Nuevo Contacto</div>
       <button class="modal-close" onclick="closeModal('modal-contact')">×</button>
@@ -498,52 +464,6 @@ textarea.form-input{resize:vertical;min-height:70px}
         <label class="form-label">Notas</label>
         <textarea class="form-input" id="mcont-notes" placeholder="Información relevante del cliente..."></textarea>
       </div>
-
-      <!-- ── Accesos al sitio web ── -->
-      <div class="accesos-section">
-        <div class="accesos-section-title">🔐 Accesos al sitio web</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Sitio web</label>
-            <input class="form-input" id="mcont-website" placeholder="https://www.empresa.com">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Usuario / Email de acceso</label>
-            <input class="form-input" id="mcont-webuser" placeholder="admin@empresa.com">
-          </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label">Contraseña</label>
-          <div class="password-wrap">
-            <input class="form-input" id="mcont-webpass" type="password" placeholder="Contraseña del panel">
-            <button class="btn-eye" type="button" onclick="togglePass('mcont-webpass',this)" title="Mostrar/ocultar">👁</button>
-          </div>
-        </div>
-      </div>
-
-      <!-- ── Historial de contactos comerciales ── -->
-      <div class="hist-section" id="hist-section">
-        <div class="hist-section-title">
-          <span>📋 Historial de interacciones</span>
-          <button class="btn btn-primary btn-sm" onclick="showHistForm()">+ Agregar</button>
-        </div>
-        <div id="hist-entries"></div>
-        <div class="hist-add-form hidden" id="hist-form">
-          <div class="form-group">
-            <label class="form-label">Fecha</label>
-            <input class="form-input" id="hf-date" type="date" style="max-width:180px">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Nota</label>
-            <textarea class="form-input" id="hf-desc" placeholder="Lo que se ofreció, lo que respondió el cliente, próximos pasos..."></textarea>
-          </div>
-          <div style="display:flex;gap:8px;justify-content:flex-end">
-            <button class="btn btn-secondary btn-sm" onclick="hideHistForm()">Cancelar</button>
-            <button class="btn btn-primary btn-sm" onclick="saveHistEntry()">💾 Guardar</button>
-          </div>
-        </div>
-      </div>
-
     </div>
     <div class="modal-ftr">
       <div class="ftr-left">
@@ -585,11 +505,7 @@ textarea.form-input{resize:vertical;min-height:70px}
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Empresa</label>
-          <div class="autocomplete-wrap" id="mact-company-wrap">
-            <input class="form-input" id="mact-company" placeholder="Escribí para buscar empresa..." autocomplete="off"
-              oninput="actCompanySearch(this.value)" onfocus="actCompanySearch(this.value)" onblur="setTimeout(()=>hideActAutocomplete(),200)">
-            <div class="autocomplete-list hidden" id="mact-company-list"></div>
-          </div>
+          <input class="form-input" id="mact-company" placeholder="Empresa relacionada">
         </div>
         <div class="form-group">
           <label class="form-label">Deal relacionado</label>
@@ -650,16 +566,16 @@ let deals = [
 ];
 
 let contacts = [
-  {id:1, company:'Tech Solutions S.A.',       contact:'Martín García',   email:'martin@techsol.com',      phone:'+54 11 4500-1234', industry:'Tecnología',   status:'Activo',   source:'Referido',       city:'CABA',          notes:'Cliente desde el inicio.',           website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:2, company:'Grupo Salud Patagonia',     contact:'Laura Méndez',    email:'l.mendez@gsalud.com',     phone:'+54 299 410-5678', industry:'Salud',        status:'Activo',   source:'Web Orgánico',   city:'Neuquén',       notes:'Interesado en mantenimiento.',       website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:3, company:'Distribuidora Norte',       contact:'Carlos Pérez',    email:'cperez@distnorte.com',    phone:'+54 351 420-9012', industry:'Comercio',     status:'Activo',   source:'Referido',       city:'Córdoba',       notes:'Requiere soporte frecuente.',        website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:4, company:'Estudio Jurídico Balmori', contact:'Ana Balmori',     email:'ana@balmori.com.ar',      phone:'+54 11 4800-3456', industry:'Legal',        status:'Activo',   source:'LinkedIn',       city:'CABA',          notes:'Muy ordenada. Paga en término.',     website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:5, company:'Constructora Del Sur',      contact:'Roberto Vidal',   email:'rvidal@delsur.com.ar',    phone:'+54 261 430-7890', industry:'Construcción', status:'Activo',   source:'Google Ads',     city:'Mendoza',       notes:'Proyecto de escala grande.',         website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:6, company:'Agro Pampa S.R.L.',         contact:'Diego Fontana',   email:'dfontana@agropampa.com',  phone:'+54 336 440-2345', industry:'Agro',         status:'Inactivo', source:'Email Marketing', city:'La Pampa',      notes:'Sin actividad desde agosto 2024.',   website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:7, company:'Retail Express',            contact:'Sofía Luna',      email:'sluna@retailex.com',      phone:'+54 11 4900-6789', industry:'Retail',       status:'Activo',   source:'LinkedIn',       city:'CABA',          notes:'Expansión a 3 sucursales.',          website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:8, company:'Clínica San Martín',        contact:'Dr. Pablo Ruiz',  email:'pruiz@clinicasm.com',     phone:'+54 223 450-0123', industry:'Salud',        status:'Activo',   source:'Referido',       city:'Mar del Plata', notes:'Contacto mensual recomendado.',      website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:9, company:'Fintech Innovar',           contact:'Valeria Sosa',    email:'vsosa@innovar.io',        phone:'+54 11 5000-4567', industry:'Fintech',      status:'Prospect', source:'LinkedIn',       city:'CABA',          notes:'Reunión de presentación pendiente.', website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
-  {id:10,company:'Logística Rápida',          contact:'Hernán Torres',   email:'htorres@logrrapida.com',  phone:'+54 341 460-8901', industry:'Logística',    status:'Activo',   source:'Google Ads',     city:'Rosario',       notes:'Prioridad alta. Gran volumen.',      website:'',website_user:'',website_pass:'',website_cms:'',history:[]},
+  {id:1, company:'Tech Solutions S.A.',       contact:'Martín García',   email:'martin@techsol.com',      phone:'+54 11 4500-1234', industry:'Tecnología',   status:'Activo',   source:'Referido',       city:'CABA',          notes:'Cliente desde el inicio.'},
+  {id:2, company:'Grupo Salud Patagonia',     contact:'Laura Méndez',    email:'l.mendez@gsalud.com',     phone:'+54 299 410-5678', industry:'Salud',        status:'Activo',   source:'Web Orgánico',   city:'Neuquén',       notes:'Interesado en mantenimiento.'},
+  {id:3, company:'Distribuidora Norte',       contact:'Carlos Pérez',    email:'cperez@distnorte.com',    phone:'+54 351 420-9012', industry:'Comercio',     status:'Activo',   source:'Referido',       city:'Córdoba',       notes:'Requiere soporte frecuente.'},
+  {id:4, company:'Estudio Jurídico Balmori', contact:'Ana Balmori',     email:'ana@balmori.com.ar',      phone:'+54 11 4800-3456', industry:'Legal',        status:'Activo',   source:'LinkedIn',       city:'CABA',          notes:'Muy ordenada. Paga en término.'},
+  {id:5, company:'Constructora Del Sur',      contact:'Roberto Vidal',   email:'rvidal@delsur.com.ar',    phone:'+54 261 430-7890', industry:'Construcción', status:'Activo',   source:'Google Ads',     city:'Mendoza',       notes:'Proyecto de escala grande.'},
+  {id:6, company:'Agro Pampa S.R.L.',         contact:'Diego Fontana',   email:'dfontana@agropampa.com',  phone:'+54 336 440-2345', industry:'Agro',         status:'Inactivo', source:'Email Marketing', city:'La Pampa',      notes:'Sin actividad desde agosto 2024.'},
+  {id:7, company:'Retail Express',            contact:'Sofía Luna',      email:'sluna@retailex.com',      phone:'+54 11 4900-6789', industry:'Retail',       status:'Activo',   source:'LinkedIn',       city:'CABA',          notes:'Expansión a 3 sucursales.'},
+  {id:8, company:'Clínica San Martín',        contact:'Dr. Pablo Ruiz',  email:'pruiz@clinicasm.com',     phone:'+54 223 450-0123', industry:'Salud',        status:'Activo',   source:'Referido',       city:'Mar del Plata', notes:'Contacto mensual recomendado.'},
+  {id:9, company:'Fintech Innovar',           contact:'Valeria Sosa',    email:'vsosa@innovar.io',        phone:'+54 11 5000-4567', industry:'Fintech',      status:'Prospect', source:'LinkedIn',       city:'CABA',          notes:'Reunión de presentación pendiente.'},
+  {id:10,company:'Logística Rápida',          contact:'Hernán Torres',   email:'htorres@logrrapida.com',  phone:'+54 341 460-8901', industry:'Logística',    status:'Activo',   source:'Google Ads',     city:'Rosario',       notes:'Prioridad alta. Gran volumen.'},
 ];
 
 let activities = [
@@ -982,11 +898,7 @@ function openAddContactModal() {
   editContId = null;
   document.getElementById('mcont-title').textContent='Nuevo Contacto';
   document.getElementById('mcont-delete').classList.add('hidden');
-  ['company','contact','email','phone','industry','city','notes','website','webuser','webpass'].forEach(f=>document.getElementById('mcont-'+f).value='');
-  document.getElementById('hist-section').style.display='block';
-  pendingHistory = [];
-  renderHistEntriesFromArray([]);
-  hideHistForm();
+  ['company','contact','email','phone','industry','city','notes'].forEach(f=>document.getElementById('mcont-'+f).value='');
   document.getElementById('modal-contact').classList.remove('hidden');
 }
 function openEditContactModal(id) {
@@ -1003,39 +915,23 @@ function openEditContactModal(id) {
   document.getElementById('mcont-city').value     = c.city||'';
   document.getElementById('mcont-source').value   = c.source||'Referido';
   document.getElementById('mcont-notes').value    = c.notes||'';
-  document.getElementById('mcont-website').value  = c.website||'';
-  document.getElementById('mcont-webuser').value  = c.website_user||'';
-  document.getElementById('mcont-webpass').value  = c.website_pass||'';
-  // Historial
-  const histSection = document.getElementById('hist-section');
-  histSection.style.display = 'block';
-  renderHistEntries(c);
-  hideHistForm();
   document.getElementById('modal-contact').classList.remove('hidden');
 }
 function saveContact() {
   const data = {
-    company:     document.getElementById('mcont-company').value.trim(),
-    contact:     document.getElementById('mcont-contact').value.trim(),
-    email:       document.getElementById('mcont-email').value.trim(),
-    phone:       document.getElementById('mcont-phone').value.trim(),
-    industry:    document.getElementById('mcont-industry').value.trim(),
-    status:      document.getElementById('mcont-status').value,
-    city:        document.getElementById('mcont-city').value.trim(),
-    source:      document.getElementById('mcont-source').value,
-    notes:       document.getElementById('mcont-notes').value.trim(),
-    website:     document.getElementById('mcont-website').value.trim(),
-    website_user:document.getElementById('mcont-webuser').value.trim(),
-    website_pass:document.getElementById('mcont-webpass').value,
+    company:  document.getElementById('mcont-company').value.trim(),
+    contact:  document.getElementById('mcont-contact').value.trim(),
+    email:    document.getElementById('mcont-email').value.trim(),
+    phone:    document.getElementById('mcont-phone').value.trim(),
+    industry: document.getElementById('mcont-industry').value.trim(),
+    status:   document.getElementById('mcont-status').value,
+    city:     document.getElementById('mcont-city').value.trim(),
+    source:   document.getElementById('mcont-source').value,
+    notes:    document.getElementById('mcont-notes').value.trim(),
   };
   if(!data.company||!data.contact){alert('Empresa y contacto son obligatorios.');return;}
-  if(editContId){
-    const i=contacts.findIndex(c=>c.id===editContId);
-    if(i>=0) contacts[i]={...contacts[i],...data};
-  } else {
-    contacts.push({id:nextContId++,...data,history:[...pendingHistory]});
-    pendingHistory = [];
-  }
+  if(editContId){const i=contacts.findIndex(c=>c.id===editContId);if(i>=0) contacts[i]={...contacts[i],...data};}
+  else{contacts.push({id:nextContId++,...data});}
   closeModal('modal-contact'); renderContacts(); updateKPIs(); save();
 }
 function deleteContact() {
@@ -1082,7 +978,6 @@ function markDone(id) {
 function openAddActivityModal() {
   ['title','company','deal'].forEach(f=>document.getElementById('mact-'+f).value='');
   document.getElementById('mact-due').value = new Date().toISOString().slice(0,10);
-  hideActAutocomplete();
   document.getElementById('modal-activity').classList.remove('hidden');
 }
 function saveActivity() {
@@ -1270,126 +1165,6 @@ function renderDashboard() {
       {left:30}
     );
   });
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// HISTORIAL DE INTERACCIONES (por contacto)
-// ═══════════════════════════════════════════════════════════════════════
-function renderHistEntries(c) {
-  renderHistEntriesFromArray(c.history || []);
-}
-
-function showHistForm() {
-  document.getElementById('hist-form').classList.remove('hidden');
-  document.getElementById('hf-date').value = new Date().toISOString().slice(0,10);
-  document.getElementById('hf-desc').value = '';
-}
-
-function hideHistForm() {
-  const f = document.getElementById('hist-form');
-  if(f) f.classList.add('hidden');
-}
-
-// Array temporal para historial cuando se crea un contacto nuevo (editContId === null)
-let pendingHistory = [];
-
-function saveHistEntry() {
-  const date = document.getElementById('hf-date').value;
-  const desc = document.getElementById('hf-desc').value.trim();
-  if(!desc) { alert('Escribí una nota antes de guardar.'); return; }
-  const entry = {id: Date.now().toString(36), date, desc};
-  if(editContId) {
-    const c = contacts.find(x=>x.id===editContId);
-    if(!c) return;
-    if(!c.history) c.history = [];
-    c.history.push(entry);
-    renderHistEntries(c);
-    save();
-  } else {
-    pendingHistory.push(entry);
-    renderHistEntriesFromArray(pendingHistory);
-  }
-  hideHistForm();
-}
-
-function deleteHistEntry(hid) {
-  if(editContId) {
-    const c = contacts.find(x=>x.id===editContId);
-    if(!c || !c.history) return;
-    if(!confirm('¿Eliminar esta entrada?')) return;
-    c.history = c.history.filter(h=>h.id!==hid);
-    renderHistEntries(c);
-    save();
-  } else {
-    if(!confirm('¿Eliminar esta entrada?')) return;
-    pendingHistory = pendingHistory.filter(h=>h.id!==hid);
-    renderHistEntriesFromArray(pendingHistory);
-  }
-}
-
-function renderHistEntriesFromArray(hist) {
-  const wrap = document.getElementById('hist-entries');
-  if(!hist || hist.length === 0) {
-    wrap.innerHTML = '<div style="font-size:13px;color:#a0aec0;text-align:center;padding:14px 0">Sin interacciones registradas aún.</div>';
-    return;
-  }
-  const sorted = [...hist].sort((a,b)=>b.date.localeCompare(a.date));
-  wrap.innerHTML = sorted.map(h => `
-    <div class="hist-entry">
-      <div class="hist-entry-header">
-        <span class="hist-entry-date">📅 ${h.date}</span>
-      </div>
-      <div class="hist-entry-text">${h.desc}</div>
-      <button class="hist-entry-del" onclick="deleteHistEntry('${h.id}')" title="Eliminar">✕</button>
-    </div>
-  `).join('');
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// AUTOCOMPLETE EMPRESA EN MODAL ACTIVIDAD
-// ═══════════════════════════════════════════════════════════════════════
-function actCompanySearch(val) {
-  const list = document.getElementById('mact-company-list');
-  if(!list) return;
-  const q = val.toLowerCase().trim();
-  // Todas las empresas únicas (contacts + deals)
-  const allCompanies = [...new Set([
-    ...contacts.map(c=>({company:c.company, contact:c.contact})),
-    ...deals.map(d=>({company:d.company, contact:d.contact}))
-  ].map(x=>JSON.stringify(x)))].map(x=>JSON.parse(x));
-  // Deduplicar por empresa
-  const seen = new Set();
-  const unique = allCompanies.filter(x=>{ if(seen.has(x.company)) return false; seen.add(x.company); return true; });
-  const filtered = q ? unique.filter(x=>x.company.toLowerCase().includes(q) || (x.contact||'').toLowerCase().includes(q)) : unique;
-  if(filtered.length === 0 || (!q && filtered.length > 12)) { list.classList.add('hidden'); return; }
-  list.innerHTML = filtered.slice(0,10).map(x=>`
-    <div class="autocomplete-item" onmousedown="selectActCompany('${x.company.replace(/'/g,"\\'")}','${(x.contact||'').replace(/'/g,"\\'")}')">
-      <strong>${x.company}</strong>
-      ${x.contact ? `<small>👤 ${x.contact}</small>` : ''}
-    </div>`).join('');
-  list.classList.remove('hidden');
-}
-
-function selectActCompany(company, contact) {
-  document.getElementById('mact-company').value = company;
-  hideActAutocomplete();
-  // Auto-completar deal si hay uno activo de esa empresa
-  const relDeal = deals.find(d=>d.company===company && !['ganado','perdido'].includes(d.stage));
-  if(relDeal) document.getElementById('mact-deal').value = relDeal.name;
-}
-
-function hideActAutocomplete() {
-  const list = document.getElementById('mact-company-list');
-  if(list) list.classList.add('hidden');
-}
-
-// ═══════════════════════════════════════════════════════════════════════
-// TOGGLE PASSWORD VISIBILITY
-// ═══════════════════════════════════════════════════════════════════════
-function togglePass(inputId, btn) {
-  const input = document.getElementById(inputId);
-  if(input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
-  else { input.type = 'password'; btn.textContent = '👁'; }
 }
 
 // ═══════════════════════════════════════════════════════════════════════
