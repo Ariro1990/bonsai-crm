@@ -182,6 +182,36 @@ textarea.form-input{resize:vertical;min-height:70px}
 .p-col-add-icon{font-size:24px;color:#a0aec0}
 .p-col-add-label{font-size:12px;color:#a0aec0;font-weight:600}
 .p-col-add:hover .p-col-add-icon,.p-col-add:hover .p-col-add-label{color:#1565c0}
+
+/* ── Autocomplete empresa ── */
+.autocomplete-wrap{position:relative}
+.autocomplete-list{position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid #1565c0;border-top:none;border-radius:0 0 7px 7px;z-index:200;max-height:180px;overflow-y:auto;box-shadow:0 4px 12px rgba(0,0,0,.12)}
+.autocomplete-item{padding:8px 12px;font-size:13px;cursor:pointer;border-bottom:1px solid #f0f4f8;display:flex;flex-direction:column;gap:2px}
+.autocomplete-item:last-child{border-bottom:none}
+.autocomplete-item:hover{background:#e8f0fe}
+.autocomplete-item strong{color:#1a202c}
+.autocomplete-item small{color:#a0aec0;font-size:11px}
+
+/* ── Historial de contactos ── */
+.hist-section{border-top:2px solid #f0f4f8;margin-top:20px;padding-top:18px}
+.hist-section-title{font-size:13px;font-weight:700;color:#2d3748;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between}
+.hist-entry{background:#f8fafc;border-radius:8px;padding:12px 14px;margin-bottom:8px;border-left:3px solid #1565c0;position:relative}
+.hist-entry-date{font-size:11px;font-weight:700;color:#1565c0;margin-bottom:5px}
+.hist-entry-text{font-size:13px;color:#2d3748;line-height:1.5;white-space:pre-wrap}
+.hist-entry-del{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;font-size:13px;color:#cbd5e0;transition:color .15s}
+.hist-entry-del:hover{color:#e53935}
+.hist-add-form{background:#fff;border:1px dashed #cbd5e0;border-radius:8px;padding:14px;margin-top:8px}
+
+/* ── Accesos web ── */
+.accesos-section{border-top:2px solid #f0f4f8;margin-top:20px;padding-top:18px}
+.accesos-section-title{font-size:13px;font-weight:700;color:#2d3748;margin-bottom:12px}
+.password-wrap{position:relative}
+.password-wrap .form-input{padding-right:40px}
+.btn-eye{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:16px;color:#a0aec0}
+.btn-eye:hover{color:#4a5568}
+
+/* ── Modal wide ── */
+.modal-wide{width:640px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 </head>
@@ -421,7 +451,7 @@ textarea.form-input{resize:vertical;min-height:70px}
 
 <!-- ═══ MODAL CONTACT ═══ -->
 <div class="modal-overlay hidden" id="modal-contact">
-  <div class="modal">
+  <div class="modal modal-wide">
     <div class="modal-hdr">
       <div class="modal-hdr-title" id="mcont-title">Nuevo Contacto</div>
       <button class="modal-close" onclick="closeModal('modal-contact')">×</button>
@@ -448,20 +478,68 @@ textarea.form-input{resize:vertical;min-height:70px}
           <input class="form-input" id="mcont-phone" placeholder="+54 11 0000-0000">
         </div>
       </div>
-      <div class="form-group">
+      <div class="form-row">
+        <div class="form-group">
           <label class="form-label">Estado</label>
           <select class="form-select" id="mcont-status">
             <option>Activo</option><option>Prospect</option><option>Inactivo</option>
           </select>
         </div>
-      <div class="form-group">
+        <div class="form-group">
           <label class="form-label">Ciudad</label>
           <input class="form-input" id="mcont-city" placeholder="CABA, Córdoba...">
         </div>
+      </div>
       <div class="form-group">
         <label class="form-label">Notas</label>
         <textarea class="form-input" id="mcont-notes" placeholder="Información relevante del cliente..."></textarea>
       </div>
+
+      <!-- ── Accesos al sitio web ── -->
+      <div class="accesos-section">
+        <div class="accesos-section-title">🔐 Accesos al sitio web</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Sitio web</label>
+            <input class="form-input" id="mcont-website" placeholder="https://www.empresa.com">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Usuario / Email de acceso</label>
+            <input class="form-input" id="mcont-webuser" placeholder="admin@empresa.com">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Contraseña</label>
+          <div class="password-wrap">
+            <input class="form-input" id="mcont-webpass" type="password" placeholder="Contraseña del panel">
+            <button class="btn-eye" type="button" onclick="togglePass('mcont-webpass',this)">👁</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Historial de interacciones ── -->
+      <div class="hist-section" id="hist-section">
+        <div class="hist-section-title">
+          <span>📋 Historial de interacciones</span>
+          <button class="btn btn-primary btn-sm" onclick="showHistForm()">+ Agregar</button>
+        </div>
+        <div id="hist-entries"></div>
+        <div class="hist-add-form hidden" id="hist-form">
+          <div class="form-group">
+            <label class="form-label">Fecha</label>
+            <input class="form-input" id="hf-date" type="date" style="max-width:180px">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Nota</label>
+            <textarea class="form-input" id="hf-desc" placeholder="Lo que se ofreció, respuesta del cliente, próximos pasos..."></textarea>
+          </div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-secondary btn-sm" onclick="hideHistForm()">Cancelar</button>
+            <button class="btn btn-primary btn-sm" onclick="saveHistEntry()">💾 Guardar</button>
+          </div>
+        </div>
+      </div>
+
     </div>
     <div class="modal-ftr">
       <div class="ftr-left">
@@ -503,7 +581,11 @@ textarea.form-input{resize:vertical;min-height:70px}
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">Empresa</label>
-          <input class="form-input" id="mact-company" placeholder="Empresa relacionada">
+          <div class="autocomplete-wrap">
+            <input class="form-input" id="mact-company" placeholder="Escribí para buscar empresa..." autocomplete="off"
+              oninput="actCompanySearch(this.value)" onfocus="actCompanySearch(this.value)" onblur="setTimeout(()=>hideActAutocomplete(),200)">
+            <div class="autocomplete-list hidden" id="mact-company-list"></div>
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">Deal relacionado</label>
@@ -1033,9 +1115,12 @@ function renderContacts() {
 }
 function openAddContactModal() {
   editContId = null;
+  pendingHistory = [];
   document.getElementById('mcont-title').textContent='Nuevo Contacto';
   document.getElementById('mcont-delete').classList.add('hidden');
-  ['company','contact','email','phone','city','notes'].forEach(f=>{const el=document.getElementById('mcont-'+f); if(el) el.value='';});
+  ['company','contact','email','phone','city','notes','website','webuser','webpass'].forEach(f=>{const el=document.getElementById('mcont-'+f); if(el) el.value='';});
+  renderHistEntriesFromArray([]);
+  hideHistForm();
   document.getElementById('modal-contact').classList.remove('hidden');
 }
 function openEditContactModal(id) {
@@ -1050,28 +1135,38 @@ function openEditContactModal(id) {
   document.getElementById('mcont-status').value   = c.status;
   document.getElementById('mcont-city').value     = c.city||'';
   document.getElementById('mcont-notes').value    = c.notes||'';
+  document.getElementById('mcont-website').value  = c.website||'';
+  document.getElementById('mcont-webuser').value  = c.website_user||'';
+  document.getElementById('mcont-webpass').value  = c.website_pass||'';
+  renderHistEntriesFromArray(c.history||[]);
+  hideHistForm();
   document.getElementById('modal-contact').classList.remove('hidden');
 }
 async function saveContact() {
   const data = {
-    company:  document.getElementById('mcont-company').value.trim(),
-    contact:  document.getElementById('mcont-contact').value.trim(),
-    email:    document.getElementById('mcont-email').value.trim(),
-    phone:    document.getElementById('mcont-phone').value.trim(),
-    industry: '',
-    status:   document.getElementById('mcont-status').value,
-    city:     document.getElementById('mcont-city').value.trim(),
-    source:   '',
-    notes:    document.getElementById('mcont-notes').value.trim(),
+    company:      document.getElementById('mcont-company').value.trim(),
+    contact:      document.getElementById('mcont-contact').value.trim(),
+    email:        document.getElementById('mcont-email').value.trim(),
+    phone:        document.getElementById('mcont-phone').value.trim(),
+    industry:     '',
+    status:       document.getElementById('mcont-status').value,
+    city:         document.getElementById('mcont-city').value.trim(),
+    source:       '',
+    notes:        document.getElementById('mcont-notes').value.trim(),
+    website:      document.getElementById('mcont-website').value.trim(),
+    website_user: document.getElementById('mcont-webuser').value.trim(),
+    website_pass: document.getElementById('mcont-webpass').value,
   };
   if(!data.company||!data.contact){alert('Empresa y contacto son obligatorios.');return;}
   if(editContId){
     const i=contacts.findIndex(c=>c.id===editContId);
     if(i>=0) contacts[i]={...contacts[i],...data};
-    await saveContactToDB(data, editContId);
+    await saveContactToDB({...data, history: contacts[i]?.history||[]}, editContId);
   } else {
-    const newId = await saveContactToDB(data, null);
-    contacts.push({id:newId||nextContId++,...data});
+    const fullData = {...data, history: [...pendingHistory]};
+    const newId = await saveContactToDB(fullData, null);
+    contacts.push({id:newId||nextContId++,...fullData});
+    pendingHistory = [];
   }
   closeModal('modal-contact'); renderContacts(); updateKPIs();
 }
@@ -1316,6 +1411,114 @@ function renderDashboard() {
 // ═══════════════════════════════════════════════════════════════════════
 function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function toggleFilter() { /* future: show/hide filter panel */ }
+
+// ═══════════════════════════════════════════════════════════════════════
+// HISTORIAL DE INTERACCIONES
+// ═══════════════════════════════════════════════════════════════════════
+let pendingHistory = [];
+
+function renderHistEntriesFromArray(hist) {
+  const wrap = document.getElementById('hist-entries');
+  if(!wrap) return;
+  if(!hist || hist.length === 0) {
+    wrap.innerHTML = '<div style="font-size:13px;color:#a0aec0;text-align:center;padding:14px 0">Sin interacciones registradas aún.</div>';
+    return;
+  }
+  const sorted = [...hist].sort((a,b)=>b.date.localeCompare(a.date));
+  wrap.innerHTML = sorted.map(h => `
+    <div class="hist-entry">
+      <div class="hist-entry-date">📅 ${h.date}</div>
+      <div class="hist-entry-text">${h.desc}</div>
+      <button class="hist-entry-del" onclick="deleteHistEntry('${h.id}')" title="Eliminar">✕</button>
+    </div>
+  `).join('');
+}
+
+function showHistForm() {
+  document.getElementById('hist-form').classList.remove('hidden');
+  document.getElementById('hf-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('hf-desc').value = '';
+}
+
+function hideHistForm() {
+  const f = document.getElementById('hist-form');
+  if(f) f.classList.add('hidden');
+}
+
+async function saveHistEntry() {
+  const date = document.getElementById('hf-date').value;
+  const desc = document.getElementById('hf-desc').value.trim();
+  if(!desc) { alert('Escribí una nota antes de guardar.'); return; }
+  const entry = {id: Date.now().toString(36), date, desc};
+  if(editContId) {
+    const c = contacts.find(x=>x.id==editContId);
+    if(!c) return;
+    if(!c.history) c.history = [];
+    c.history.push(entry);
+    renderHistEntriesFromArray(c.history);
+    await saveContactToDB({history: c.history}, editContId);
+  } else {
+    pendingHistory.push(entry);
+    renderHistEntriesFromArray(pendingHistory);
+  }
+  hideHistForm();
+}
+
+async function deleteHistEntry(hid) {
+  if(editContId) {
+    const c = contacts.find(x=>x.id==editContId);
+    if(!c || !c.history) return;
+    if(!confirm('¿Eliminar esta entrada?')) return;
+    c.history = c.history.filter(h=>h.id!==hid);
+    renderHistEntriesFromArray(c.history);
+    await saveContactToDB({history: c.history}, editContId);
+  } else {
+    if(!confirm('¿Eliminar esta entrada?')) return;
+    pendingHistory = pendingHistory.filter(h=>h.id!==hid);
+    renderHistEntriesFromArray(pendingHistory);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// AUTOCOMPLETE EMPRESA EN ACTIVIDAD
+// ═══════════════════════════════════════════════════════════════════════
+function actCompanySearch(val) {
+  const list = document.getElementById('mact-company-list');
+  if(!list) return;
+  const q = val.toLowerCase().trim();
+  const seen = new Set();
+  const unique = contacts.filter(c=>{ if(seen.has(c.company)) return false; seen.add(c.company); return true; });
+  const filtered = q ? unique.filter(c=>c.company.toLowerCase().includes(q)||(c.contact||'').toLowerCase().includes(q)) : unique;
+  if(!q && filtered.length > 12) { list.classList.add('hidden'); return; }
+  if(filtered.length === 0) { list.classList.add('hidden'); return; }
+  list.innerHTML = filtered.slice(0,10).map(c=>`
+    <div class="autocomplete-item" onmousedown="selectActCompany('${c.company.replace(/'/g,"\\'")}','${(c.contact||'').replace(/'/g,"\\'")}')">
+      <strong>${c.company}</strong>
+      ${c.contact ? `<small>👤 ${c.contact}</small>` : ''}
+    </div>`).join('');
+  list.classList.remove('hidden');
+}
+
+function selectActCompany(company) {
+  document.getElementById('mact-company').value = company;
+  hideActAutocomplete();
+  const relDeal = deals.find(d=>d.company===company && !['ganado','perdido'].includes(d.stage));
+  if(relDeal) document.getElementById('mact-deal').value = relDeal.name;
+}
+
+function hideActAutocomplete() {
+  const list = document.getElementById('mact-company-list');
+  if(list) list.classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// TOGGLE PASSWORD
+// ═══════════════════════════════════════════════════════════════════════
+function togglePass(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if(input.type === 'password') { input.type = 'text'; btn.textContent = '🙈'; }
+  else { input.type = 'password'; btn.textContent = '👁'; }
+}
 
 // ─── INIT ────────────────────────────────────────────────────────────
 // Mostrar loading mientras carga Supabase
