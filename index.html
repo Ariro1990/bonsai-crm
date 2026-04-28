@@ -170,7 +170,20 @@ textarea.form-input{resize:vertical;min-height:70px}
 .btn-gcal{background:#fff;color:#1a73e8;border:1.5px solid #1a73e8;font-size:12px;padding:6px 12px;border-radius:7px;cursor:pointer;font-weight:600;display:flex;align-items:center;gap:5px;transition:all .15s}
 .btn-gcal:hover{background:#e8f0fe}
 .btn-gcal.hidden{display:none!important}
+
+/* ── Stage manager ── */
+.p-col-header{position:relative}
+.p-col-actions{position:absolute;top:8px;right:8px;display:flex;gap:4px;opacity:0;transition:opacity .15s}
+.p-col:hover .p-col-actions{opacity:1}
+.p-col-btn{background:rgba(255,255,255,.25);border:none;border-radius:5px;cursor:pointer;font-size:12px;padding:3px 7px;color:#fff;transition:background .15s;line-height:1}
+.p-col-btn:hover{background:rgba(255,255,255,.45)}
+.p-col-add{min-width:200px;width:200px;background:#f0f4f8;border-radius:10px;border:2px dashed #cbd5e0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:all .15s;padding:20px 14px}
+.p-col-add:hover{border-color:#1565c0;background:#ebf4ff}
+.p-col-add-icon{font-size:24px;color:#a0aec0}
+.p-col-add-label{font-size:12px;color:#a0aec0;font-weight:600}
+.p-col-add:hover .p-col-add-icon,.p-col-add:hover .p-col-add-label{color:#1565c0}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
 <div class="app">
@@ -270,7 +283,7 @@ textarea.form-input{resize:vertical;min-height:70px}
   <div id="view-contacts" class="view-content hidden">
     <div class="filter-bar">
       <input id="c-search" class="search-input" type="text" placeholder="🔍 Buscar empresa, contacto, email..." oninput="renderContacts()">
-      <select id="c-industry" class="form-select-sm" onchange="renderContacts()"><option value="">Todos los rubros</option></select>
+
       <select id="c-status" class="form-select-sm" onchange="renderContacts()">
         <option value="">Todos los estados</option>
         <option>Activo</option><option>Inactivo</option><option>Prospect</option>
@@ -280,7 +293,7 @@ textarea.form-input{resize:vertical;min-height:70px}
       <table class="crm-table">
         <thead><tr>
           <th>EMPRESA</th><th>CONTACTO</th><th>EMAIL</th><th>TELÉFONO</th>
-          <th>RUBRO</th><th>FUENTE</th><th>ESTADO</th><th>DEALS</th><th></th>
+          <th>ESTADO</th><th>DEALS</th><th></th>
         </tr></thead>
         <tbody id="contacts-tbody"></tbody>
       </table>
@@ -435,31 +448,16 @@ textarea.form-input{resize:vertical;min-height:70px}
           <input class="form-input" id="mcont-phone" placeholder="+54 11 0000-0000">
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label class="form-label">Rubro</label>
-          <input class="form-input" id="mcont-industry" placeholder="Tecnología, Salud...">
-        </div>
-        <div class="form-group">
+      <div class="form-group">
           <label class="form-label">Estado</label>
           <select class="form-select" id="mcont-status">
             <option>Activo</option><option>Prospect</option><option>Inactivo</option>
           </select>
         </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
+      <div class="form-group">
           <label class="form-label">Ciudad</label>
           <input class="form-input" id="mcont-city" placeholder="CABA, Córdoba...">
         </div>
-        <div class="form-group">
-          <label class="form-label">Fuente</label>
-          <select class="form-select" id="mcont-source">
-            <option>Referido</option><option>LinkedIn</option><option>Web Orgánico</option>
-            <option>Google Ads</option><option>Email Marketing</option><option>Networking</option>
-          </select>
-        </div>
-      </div>
       <div class="form-group">
         <label class="form-label">Notas</label>
         <textarea class="form-input" id="mcont-notes" placeholder="Información relevante del cliente..."></textarea>
@@ -520,11 +518,46 @@ textarea.form-input{resize:vertical;min-height:70px}
   </div>
 </div>
 
+<!-- ═══ MODAL STAGE ═══ -->
+<div class="modal-overlay hidden" id="modal-stage">
+  <div class="modal" style="width:400px">
+    <div class="modal-hdr">
+      <div class="modal-hdr-title" id="mstage-title">Nueva Etapa</div>
+      <button class="modal-close" onclick="closeModal('modal-stage')">×</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="mstage-id">
+      <div class="form-group">
+        <label class="form-label">Nombre de la etapa *</label>
+        <input class="form-input" id="mstage-name" placeholder="Ej: Seguimiento, Cierre, etc.">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Probabilidad (%)</label>
+          <input class="form-input" id="mstage-prob" type="number" min="0" max="100" placeholder="50">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Color</label>
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px" id="mstage-colors"></div>
+          <input type="hidden" id="mstage-color" value="#1976d2">
+        </div>
+      </div>
+    </div>
+    <div class="modal-ftr">
+      <div class="ftr-left">
+        <button class="btn btn-danger btn-sm hidden" id="mstage-delete" onclick="deleteStage()">🗑 Eliminar etapa</button>
+      </div>
+      <button class="btn btn-secondary" onclick="closeModal('modal-stage')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveStage()">💾 Guardar</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════════════════════════
 // STAGE CONFIG
 // ═══════════════════════════════════════════════════════════════════════
-const STAGES = [
+let STAGES = [
   {id:'nuevo',       name:'Nuevo Lead',       color:'#1976d2', prob:10 },
   {id:'contactado',  name:'Contactado',        color:'#0288d1', prob:25 },
   {id:'demo',        name:'Demo / Reunión',    color:'#00897b', prob:50 },
@@ -533,6 +566,7 @@ const STAGES = [
   {id:'ganado',      name:'Ganado',            color:'#2e7d32', prob:100},
   {id:'perdido',     name:'Perdido',           color:'#9e9e9e', prob:0  },
 ];
+const STAGE_COLORS = ['#1976d2','#0288d1','#00897b','#ef6c00','#e53935','#8e24aa','#f57c00','#0097a7','#5d4037','#546e7a'];
 
 const SOURCE_ICONS = {LinkedIn:'💼',Referido:'🤝','Web Orgánico':'🌐','Google Ads':'🔍','Email Marketing':'📧',Networking:'🎪',Otro:'📌'};
 const STATUS_STYLE = {
@@ -550,65 +584,86 @@ const ACT_CFG = {
 // ═══════════════════════════════════════════════════════════════════════
 // INITIAL DATA
 // ═══════════════════════════════════════════════════════════════════════
-let deals = [
-  {id:1, name:'Rediseño web + SEO',           company:'Tech Solutions S.A.',       contact:'Martín García',  amount:3500,  prob:100, stage:'ganado',      source:'Referido',       created:'2025-01-10', close:'2025-02-01', notes:'Proyecto confirmado. Inicio 01/02.', email:'martin@techsol.com'},
-  {id:2, name:'Mantenimiento mensual',         company:'Grupo Salud Patagonia',     contact:'Laura Méndez',   amount:1200,  prob:100, stage:'ganado',      source:'Web Orgánico',   created:'2025-01-25', close:'2025-02-01', notes:'Contrato anual firmado.', email:'l.mendez@gsalud.com'},
-  {id:3, name:'Auditoría de velocidad',        company:'Distribuidora Norte',       contact:'Carlos Pérez',   amount:2800,  prob:60,  stage:'negociacion', source:'Referido',       created:'2025-02-05', close:'2025-04-20', notes:'Esperando aprobación gerencia.', email:'cperez@distnorte.com',      nextContact:'2026-04-14'},
-  {id:4, name:'Sitio web + integración CRM',  company:'Estudio Jurídico Balmori',  contact:'Ana Balmori',    amount:5200,  prob:70,  stage:'propuesta',   source:'LinkedIn',       created:'2025-02-14', close:'2025-05-01', notes:'Enviado hace 10 días. Sin respuesta.', email:'ana@balmori.com.ar',   nextContact:'2026-04-16'},
-  {id:5, name:'App seguimiento de obra',      company:'Constructora Del Sur',      contact:'Roberto Vidal',  amount:8900,  prob:25,  stage:'contactado',  source:'Google Ads',     created:'2025-02-20', close:'2025-06-01', notes:'Presupuesto alto. Reenviar ajustado.', email:'rvidal@delsur.com.ar', nextContact:'2026-04-11'},
-  {id:6, name:'Tienda WooCommerce',           company:'Retail Express',            contact:'Sofía Luna',     amount:6400,  prob:100, stage:'ganado',      source:'LinkedIn',       created:'2025-03-01', close:'2025-03-15', notes:'Inicio confirmado. En producción.', email:'sluna@retailex.com'},
-  {id:7, name:'Portal de turnos online',      company:'Clínica San Martín',        contact:'Dr. Pablo Ruiz', amount:4100,  prob:70,  stage:'propuesta',   source:'Referido',       created:'2025-03-10', close:'2025-05-10', notes:'Segunda reunión agendada.', email:'pruiz@clinicasm.com'},
-  {id:8, name:'Sistema de tracking',          company:'Logística Rápida',          contact:'Hernán Torres',  amount:11500, prob:60,  stage:'demo',        source:'Google Ads',     created:'2025-03-15', close:'2025-05-30', notes:'Demo muy positiva. Revisando con equipo.', email:'htorres@logrrapida.com'},
-  {id:9, name:'Módulo de reportes analíticos',company:'Tech Solutions S.A.',       contact:'Martín García',  amount:2200,  prob:70,  stage:'propuesta',   source:'Referido',       created:'2025-03-20', close:'2025-04-30', notes:'Cliente habitual. Alta probabilidad.', email:'martin@techsol.com'},
-  {id:10,name:'Email marketing + automación', company:'Distribuidora Norte',       contact:'Carlos Pérez',   amount:1800,  prob:50,  stage:'contactado',  source:'Referido',       created:'2025-03-28', close:'2025-05-15', notes:'Nuevo deal tras charla telefónica.', email:'cperez@distnorte.com'},
-  {id:11,name:'Consultoría tech inicial',     company:'Fintech Innovar',           contact:'Valeria Sosa',   amount:1500,  prob:25,  stage:'nuevo',       source:'LinkedIn',       created:'2025-04-01', close:'2025-06-15', notes:'Primer contacto. Muy interesados.', email:'vsosa@innovar.io'},
-  {id:12,name:'Rebranding digital',           company:'Agro Pampa S.R.L.',         contact:'Diego Fontana',  amount:3200,  prob:10,  stage:'nuevo',       source:'Email Marketing',created:'2025-04-05', close:'2025-07-01', notes:'Contacto reactivo vía campaña.', email:'dfontana@agropampa.com'},
-];
+let deals = [];
 
-let contacts = [
-  {id:1, company:'Tech Solutions S.A.',       contact:'Martín García',   email:'martin@techsol.com',      phone:'+54 11 4500-1234', industry:'Tecnología',   status:'Activo',   source:'Referido',       city:'CABA',          notes:'Cliente desde el inicio.'},
-  {id:2, company:'Grupo Salud Patagonia',     contact:'Laura Méndez',    email:'l.mendez@gsalud.com',     phone:'+54 299 410-5678', industry:'Salud',        status:'Activo',   source:'Web Orgánico',   city:'Neuquén',       notes:'Interesado en mantenimiento.'},
-  {id:3, company:'Distribuidora Norte',       contact:'Carlos Pérez',    email:'cperez@distnorte.com',    phone:'+54 351 420-9012', industry:'Comercio',     status:'Activo',   source:'Referido',       city:'Córdoba',       notes:'Requiere soporte frecuente.'},
-  {id:4, company:'Estudio Jurídico Balmori', contact:'Ana Balmori',     email:'ana@balmori.com.ar',      phone:'+54 11 4800-3456', industry:'Legal',        status:'Activo',   source:'LinkedIn',       city:'CABA',          notes:'Muy ordenada. Paga en término.'},
-  {id:5, company:'Constructora Del Sur',      contact:'Roberto Vidal',   email:'rvidal@delsur.com.ar',    phone:'+54 261 430-7890', industry:'Construcción', status:'Activo',   source:'Google Ads',     city:'Mendoza',       notes:'Proyecto de escala grande.'},
-  {id:6, company:'Agro Pampa S.R.L.',         contact:'Diego Fontana',   email:'dfontana@agropampa.com',  phone:'+54 336 440-2345', industry:'Agro',         status:'Inactivo', source:'Email Marketing', city:'La Pampa',      notes:'Sin actividad desde agosto 2024.'},
-  {id:7, company:'Retail Express',            contact:'Sofía Luna',      email:'sluna@retailex.com',      phone:'+54 11 4900-6789', industry:'Retail',       status:'Activo',   source:'LinkedIn',       city:'CABA',          notes:'Expansión a 3 sucursales.'},
-  {id:8, company:'Clínica San Martín',        contact:'Dr. Pablo Ruiz',  email:'pruiz@clinicasm.com',     phone:'+54 223 450-0123', industry:'Salud',        status:'Activo',   source:'Referido',       city:'Mar del Plata', notes:'Contacto mensual recomendado.'},
-  {id:9, company:'Fintech Innovar',           contact:'Valeria Sosa',    email:'vsosa@innovar.io',        phone:'+54 11 5000-4567', industry:'Fintech',      status:'Prospect', source:'LinkedIn',       city:'CABA',          notes:'Reunión de presentación pendiente.'},
-  {id:10,company:'Logística Rápida',          contact:'Hernán Torres',   email:'htorres@logrrapida.com',  phone:'+54 341 460-8901', industry:'Logística',    status:'Activo',   source:'Google Ads',     city:'Rosario',       notes:'Prioridad alta. Gran volumen.'},
-];
+let contacts = [{"id": 1, "company": "American System", "contact": "Nicole", "email": "milletnicole33@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 2, "company": "Daniel Preizler", "contact": "Daniel", "email": "danielpreizler@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 3, "company": "English Point", "contact": "Martina", "email": "martinanogueirap@englishpoint.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 4, "company": "Uventech", "contact": "Dario", "email": "dario.umaschi@uventech.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 5, "company": "Claudia Verde", "contact": "Claudia", "email": "claudiaverde@claudiaverde.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 6, "company": "Torsion", "contact": "Gabe", "email": "grodriguez@torsionxsuramerica.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 7, "company": "Lara del Mar", "contact": "Marco", "email": "info@perfumeslaradelmar.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 8, "company": "Aguai", "contact": "Juan Carlos", "email": "aguaicolon@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 9, "company": "Mactoon", "contact": "Adriana", "email": "adrianacanabal@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 10, "company": "Patagonia Spanish Experience", "contact": "Sasha", "email": "sashafraser@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 11, "company": "Infocus", "contact": "Edu", "email": "evinocur@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 12, "company": "Carupa", "contact": "Federico", "email": "ventas.sanitarioscarupa@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 13, "company": "Espacio Arevalo", "contact": "Natacha", "email": "natachasixto@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 14, "company": "Meip", "contact": "Camila", "email": "csieira@meipingenieria.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 15, "company": "Refritec", "contact": "Magali", "email": "amorosomagali@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 16, "company": "Pipeflex", "contact": "Leo", "email": "leonardolapilli@pipeflex.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 17, "company": "Gstation", "contact": "Sofia", "email": "sofiafd@gstationstudio.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 18, "company": "CTSYS", "contact": "Monica", "email": "justiciaturistica@yahoo.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 19, "company": "Estudio Juridico Reali", "contact": "Nestor", "email": "nestorreali@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 20, "company": "GMP", "contact": "Juan Manuel", "email": "mercadejm@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 21, "company": "Puerta Azul Herrajes", "contact": "Leonardo", "email": "vissanileonardo@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 22, "company": "Polvora", "contact": "Pablo", "email": "polvorayespumacotillon@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 23, "company": "Wave RH", "contact": "Cristina", "email": "rrhh.crismartinez@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 24, "company": "Fábrica Deportiva", "contact": "Gabriel", "email": "gabrielkraizer@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 25, "company": "Residencia Moreto", "contact": "Lucas", "email": "", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 26, "company": "Capo Ingenieria", "contact": "Lara", "email": "l.giumelli@hotmail.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 27, "company": "Carpinteria Bilbao", "contact": "Belen", "email": "", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 28, "company": "Control V", "contact": "Silvina", "email": "cataldoabogados@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 29, "company": "Editorial Argenta", "contact": "Alex", "email": "info@editorialargenta.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 30, "company": "Escribania Mariani", "contact": "Jorge", "email": "escribaniamariani@yahoo.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 31, "company": "Estudio Contable Gulli Chacur", "contact": "Florencia", "email": "florencia@gullichacur.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 32, "company": "Futbol Queens", "contact": "Demian", "email": "demiankrynski@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 33, "company": "Garcia Despachantes", "contact": "Diego", "email": "garciadespachantes@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 34, "company": "Queen Drinks", "contact": "Fabian", "email": "queendrinks@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 35, "company": "TP Consulting", "contact": "Martin", "email": "martin.simian@tpconsulting.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 36, "company": "Quick Color", "contact": "Nicolas", "email": "nico@color.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 37, "company": "Travel Paz", "contact": "Paz", "email": "travelpaz@live.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 38, "company": "Frey", "contact": "Lucero", "email": "luceroc@frey.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 39, "company": "Punto Sur", "contact": "Nestor", "email": "nestor.sierrafernandez@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 40, "company": "Estancia Razul", "contact": "Noel", "email": "noelvaeza@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 41, "company": "Bechlab", "contact": "Leandro", "email": "leandro@bechlab.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 42, "company": "Motorhome Time", "contact": "Gabriel", "email": "gabriel@motorhometime.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 43, "company": "Schroeder", "contact": "Lucia", "email": "lirazusta@familiaschroeder.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 44, "company": "Vaisa Riego", "contact": "Leandro", "email": "lecarmona2@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 45, "company": "Boggero", "contact": "Silvina", "email": "arq.silvina.boggero@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 46, "company": "MYV Logistcs", "contact": "Walter", "email": "info@myvlogistics.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 47, "company": "Pallet Sustentable", "contact": "Natalia", "email": "palletsustentable@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 48, "company": "Estudio Garillo", "contact": "Maxi", "email": "info@estudiogarillo.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 49, "company": "Estudio Juridico PGW", "contact": "Priscila", "email": "estudiopgw@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 50, "company": "Airkraw", "contact": "Dario", "email": "dariokr@airkraw.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 51, "company": "Lotipenso Cabañas", "contact": "Carina", "email": "cab1993@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 52, "company": "Ingles en BA", "contact": "Mercedes", "email": "info@inglesenbuenosaires.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 53, "company": "Las Lagunas Apart", "contact": "Diego", "email": "diegopoy@yahoo.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 54, "company": "Estudio Abolsky", "contact": "Hernan", "email": "habolsky@estudioabolsky.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 55, "company": "Expreso NL", "contact": "Nicolas", "email": "nl.logistica1@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 56, "company": "Gladys y Dinicola", "contact": "Gladys", "email": "gladysgomez@fibertel.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 57, "company": "Agrovillagra", "contact": "Dario", "email": "agrovillagra@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 58, "company": "Milena Caserola", "contact": "Matias", "email": "prensa.caserola@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 59, "company": "Gea Nutricion", "contact": "Guido", "email": "gea.nutricionista@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 60, "company": "MEK Comunicacion", "contact": "Mercedes", "email": "info@mekcomunicacion.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 61, "company": "Matiz", "contact": "Sol", "email": "scapristo@gigot.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 62, "company": "Fumigadora San Miguel", "contact": "Matias", "email": "sanmiguelfumigadora@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 63, "company": "DKP", "contact": "Eugenia", "email": "eugenia@dkp.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 64, "company": "Accontenidos", "contact": "Cristian", "email": "carganaraz@accontenidos.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 65, "company": "Gestion Post", "contact": "Juan", "email": "juan.izquierdo@dixtra.co", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 66, "company": "Wake", "contact": "Micaela y Stefi", "email": "hola@wakecomunicacion.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 67, "company": "Espacio Velasco", "contact": "Fernando Nasuti", "email": "fermatias1391@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 68, "company": "Idearser", "contact": "Sol", "email": "soltar82@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 69, "company": "Justech", "contact": "Soledad", "email": "soledadescobar@yahoo.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 70, "company": "Rescate Historico", "contact": "Walter", "email": "walterhernandavis@hotmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 71, "company": "Leben Salud", "contact": "Lourdes", "email": "lourdesturi@gmail.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 72, "company": "RAD", "contact": "Javier", "email": "", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 73, "company": "Roomie", "contact": "Pope", "email": "hello@roomiedesign.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 74, "company": "Grupo Linch", "contact": "Martin", "email": "info@grupolinch.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 75, "company": "Kiki Pepe", "contact": "Daniela", "email": "hola@masitascr.com", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 76, "company": "Logos Argentina", "contact": "Nicolas", "email": "nicolas@nueve.la", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 77, "company": "Ztech", "contact": "Ezequiel", "email": "ezequiel@ztech.com.ar", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}, {"id": 78, "company": "St Brendans", "contact": "Lautaro", "email": "", "phone": "", "industry": "", "status": "Activo", "source": "", "city": "", "notes": ""}];
 
-let activities = [
-  {id:1, type:'call',    title:'Llamada de seguimiento presupuesto',  company:'Estudio Jurídico Balmori', deal:'Sitio web + integración CRM',  due:'2025-04-15', status:'pending', priority:'high'},
-  {id:2, type:'meeting', title:'Reunión de kick-off proyecto',        company:'Retail Express',           deal:'Tienda WooCommerce',            due:'2025-04-16', status:'pending', priority:'high'},
-  {id:3, type:'email',   title:'Enviar especificaciones técnicas',    company:'Logística Rápida',         deal:'Sistema de tracking',          due:'2025-04-17', status:'pending', priority:'medium'},
-  {id:4, type:'call',    title:'Confirmar cronograma de entrega',     company:'Estudio Jurídico Balmori', deal:'Sitio web + integración CRM',  due:'2025-04-12', status:'overdue', priority:'high'},
-  {id:5, type:'meeting', title:'Demo del portal de turnos',           company:'Clínica San Martín',       deal:'Portal de turnos online',      due:'2025-04-18', status:'pending', priority:'medium'},
-  {id:6, type:'email',   title:'Agendar primera reunión',             company:'Fintech Innovar',          deal:'Consultoría tech inicial',     due:'2025-04-19', status:'pending', priority:'low'},
-  {id:7, type:'call',    title:'Negociación precio final',            company:'Distribuidora Norte',      deal:'Auditoría de velocidad',       due:'2025-04-11', status:'overdue', priority:'high'},
-  {id:8, type:'meeting', title:'Presentación propuesta módulo',       company:'Tech Solutions S.A.',      deal:'Módulo de reportes analíticos',due:'2025-04-22', status:'pending', priority:'medium'},
-  {id:9, type:'task',    title:'Preparar demo tracking logística',    company:'Logística Rápida',         deal:'Sistema de tracking',          due:'2025-04-20', status:'pending', priority:'high'},
-  {id:10,type:'email',   title:'Envío presupuesto rebranding',        company:'Agro Pampa S.R.L.',        deal:'Rebranding digital',           due:'2025-04-10', status:'done',    priority:'medium'},
-];
+let activities = [];
 
-let nextDealId = 200, nextContId = 200, nextActId = 200;
+let nextDealId = 200, nextContId = 79, nextActId = 200;
 let editDealId = null, editContId = null;
 let currentView = 'pipeline';
 // (no external chart library — using inline canvas renderer below)
 
 // ═══════════════════════════════════════════════════════════════════════
-// STORAGE
+// SUPABASE
 // ═══════════════════════════════════════════════════════════════════════
-function save() {
-  try { localStorage.setItem('bcrm_deals', JSON.stringify(deals)); localStorage.setItem('bcrm_contacts', JSON.stringify(contacts)); localStorage.setItem('bcrm_activities', JSON.stringify(activities)); } catch(e) {}
-}
-function load() {
+const SUPA_URL = 'https://gubercneljnljhdzfici.supabase.co';
+const SUPA_KEY = 'sb_publishable_eOA9kQddxSkiYGSVpoMMmw_ScIaWWlY';
+const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+async function loadFromSupabase() {
   try {
-    const d = localStorage.getItem('bcrm_deals'); if(d) { deals = JSON.parse(d); nextDealId = Math.max(0,...deals.map(x=>x.id))+1; }
-    const c = localStorage.getItem('bcrm_contacts'); if(c) { contacts = JSON.parse(c); nextContId = Math.max(0,...contacts.map(x=>x.id))+1; }
-    const a = localStorage.getItem('bcrm_activities'); if(a) { activities = JSON.parse(a); nextActId = Math.max(0,...activities.map(x=>x.id))+1; }
-  } catch(e) {}
+    const [rc, rd, ra] = await Promise.all([
+      supa.from('contacts').select('*').order('id'),
+      supa.from('deals').select('*').order('id'),
+      supa.from('activities').select('*').order('id'),
+    ]);
+    if(rc.data && rc.data.length > 0) {
+      contacts = rc.data.map(c => ({
+        id: c.id, company: c.company||'', contact: c.contact||'',
+        email: c.email||'', phone: c.phone||'', status: c.status||'Activo',
+        city: c.city||'', notes: c.notes||'', source: ''
+      }));
+      nextContId = Math.max(...contacts.map(x=>x.id)) + 1;
+    }
+    if(rd.data && rd.data.length > 0) {
+      deals = rd.data.map(d => ({
+        id: d.id, name: d.name||'', company: d.company||'', contact: d.contact||'',
+        email: d.email||'', amount: d.amount||0, prob: d.prob||50,
+        stage: d.stage||'nuevo', source: d.source||'', close: d.close_date||'',
+        notes: d.notes||'', nextContact: d.next_contact||null,
+        created: d.created_at ? d.created_at.slice(0,10) : new Date().toISOString().slice(0,10)
+      }));
+      nextDealId = Math.max(...deals.map(x=>x.id)) + 1;
+    }
+    if(ra.data && ra.data.length > 0) {
+      activities = ra.data.map(a => ({
+        id: a.id, type: a.type||'task', title: a.title||'', company: a.company||'',
+        deal: a.deal||'', due: a.due||'', status: a.status||'pending', priority: a.priority||'medium'
+      }));
+      nextActId = Math.max(...activities.map(x=>x.id)) + 1;
+    }
+  } catch(e) { console.error('Supabase load error:', e); }
 }
+
+async function saveContactToDB(data, id) {
+  const row = { company: data.company, contact: data.contact, email: data.email,
+    phone: data.phone, status: data.status, city: data.city, notes: data.notes };
+  if(id) { await supa.from('contacts').update(row).eq('id', id); }
+  else { const r = await supa.from('contacts').insert(row).select(); if(r.data) return r.data[0].id; }
+}
+async function deleteContactDB(id) { await supa.from('contacts').delete().eq('id', id); }
+
+async function saveDealDB(data, id) {
+  const row = { name: data.name, company: data.company, contact: data.contact,
+    email: data.email, amount: data.amount, prob: data.prob, stage: data.stage,
+    source: data.source, close_date: data.close, notes: data.notes, next_contact: data.nextContact };
+  if(id) { await supa.from('deals').update(row).eq('id', id); }
+  else { const r = await supa.from('deals').insert(row).select(); if(r.data) return r.data[0].id; }
+}
+async function deleteDealDB(id) { await supa.from('deals').delete().eq('id', id); }
+
+async function saveActivityDB(data, id) {
+  const row = { type: data.type, title: data.title, company: data.company,
+    deal: data.deal, due: data.due, status: data.status, priority: data.priority };
+  if(id) { await supa.from('activities').update(row).eq('id', id); }
+  else { const r = await supa.from('activities').insert(row).select(); if(r.data) return r.data[0].id; }
+}
+
+// legacy save() no-op
+function save() {}
+function load() {}
 
 // ═══════════════════════════════════════════════════════════════════════
 // NAVIGATION
@@ -722,14 +777,14 @@ function gcalLink(deal) {
 // ═══════════════════════════════════════════════════════════════════════
 function renderPipeline() {
   const wrap = document.getElementById('view-pipeline');
-  wrap.innerHTML = STAGES.filter(s=>s.id!=='perdido').map(stage => {
+  const cols = STAGES.filter(s=>s.id!=='perdido').map(stage => {
     const stageDeals = deals.filter(d=>d.stage===stage.id);
     const total = stageDeals.reduce((s,d)=>s+d.amount,0);
+    const isProtected = ['ganado','perdido'].includes(stage.id);
     const cards = stageDeals.map(deal => {
       const pc = deal.prob>=75?'#2e7d32':deal.prob>=50?'#ef6c00':'#e53935';
       const days = Math.floor((new Date()-new Date(deal.created))/86400000);
       const srcIcon = SOURCE_ICONS[deal.source]||'📌';
-      // Next-contact badge
       let ncBadge = '';
       if(deal.nextContact) {
         const today = new Date().toISOString().slice(0,10);
@@ -752,15 +807,98 @@ function renderPipeline() {
         </div>
       </div>`;
     }).join('');
+    const actionBtns = `<div class="p-col-actions">
+      <button class="p-col-btn" onclick="event.stopPropagation();openEditStageModal('${stage.id}')" title="Editar etapa">✏️</button>
+      ${!isProtected ? `<button class="p-col-btn" onclick="event.stopPropagation();confirmDeleteStage('${stage.id}')" title="Eliminar etapa">🗑</button>` : ''}
+    </div>`;
     return `<div class="p-col">
       <div class="p-col-header" style="background:${stage.color}">
+        ${actionBtns}
         <div class="p-col-title">${stage.name}</div>
         <div class="p-col-meta"><span>${stageDeals.length} deal${stageDeals.length!==1?'s':''}</span><span>$${total.toLocaleString()}</span></div>
       </div>
       <div class="p-cards">${cards}</div>
       <div class="p-add-btn" onclick="openAddModal('${stage.id}')">+ Agregar deal aquí</div>
     </div>`;
-  }).join('');
+  });
+  // Botón para agregar nueva columna
+  cols.push(`<div class="p-col-add" onclick="openAddStageModal()">
+    <div class="p-col-add-icon">＋</div>
+    <div class="p-col-add-label">Nueva etapa</div>
+  </div>`);
+  wrap.innerHTML = cols.join('');
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// STAGE MANAGER
+// ═══════════════════════════════════════════════════════════════════════
+function buildColorPicker(selectedColor) {
+  const wrap = document.getElementById('mstage-colors');
+  wrap.innerHTML = STAGE_COLORS.map(c =>
+    `<div onclick="selectStageColor('${c}')" style="width:22px;height:22px;border-radius:50%;background:${c};cursor:pointer;border:3px solid ${c===selectedColor?'#1a202c':'transparent'};transition:border .15s" title="${c}"></div>`
+  ).join('');
+  document.getElementById('mstage-color').value = selectedColor;
+}
+function selectStageColor(color) {
+  document.getElementById('mstage-color').value = color;
+  buildColorPicker(color);
+}
+function openAddStageModal() {
+  document.getElementById('mstage-title').textContent = 'Nueva Etapa';
+  document.getElementById('mstage-id').value = '';
+  document.getElementById('mstage-name').value = '';
+  document.getElementById('mstage-prob').value = '50';
+  document.getElementById('mstage-delete').classList.add('hidden');
+  buildColorPicker(STAGE_COLORS[0]);
+  document.getElementById('modal-stage').classList.remove('hidden');
+}
+function openEditStageModal(id) {
+  const s = STAGES.find(x=>x.id===id); if(!s) return;
+  document.getElementById('mstage-title').textContent = 'Editar Etapa';
+  document.getElementById('mstage-id').value = id;
+  document.getElementById('mstage-name').value = s.name;
+  document.getElementById('mstage-prob').value = s.prob;
+  const isProtected = ['ganado','perdido'].includes(id);
+  if(isProtected) document.getElementById('mstage-delete').classList.add('hidden');
+  else document.getElementById('mstage-delete').classList.remove('hidden');
+  buildColorPicker(s.color);
+  document.getElementById('modal-stage').classList.remove('hidden');
+}
+function saveStage() {
+  const id    = document.getElementById('mstage-id').value;
+  const name  = document.getElementById('mstage-name').value.trim();
+  const prob  = parseInt(document.getElementById('mstage-prob').value)||50;
+  const color = document.getElementById('mstage-color').value;
+  if(!name) { alert('El nombre es obligatorio.'); return; }
+  if(id) {
+    // Editar existente
+    const i = STAGES.findIndex(s=>s.id===id);
+    if(i>=0) STAGES[i] = {...STAGES[i], name, prob, color};
+  } else {
+    // Nueva etapa — insertarla antes de 'ganado'
+    const newId = 'stage_' + Date.now();
+    const idx = STAGES.findIndex(s=>s.id==='ganado');
+    STAGES.splice(idx, 0, {id:newId, name, color, prob});
+  }
+  closeModal('modal-stage');
+  renderPipeline();
+  save();
+}
+function confirmDeleteStage(id) {
+  const s = STAGES.find(x=>x.id===id); if(!s) return;
+  const count = deals.filter(d=>d.stage===id).length;
+  const msg = count > 0
+    ? `La etapa "${s.name}" tiene ${count} deal(s). ¿Eliminarla? Los deals pasarán a "Nuevo Lead".`
+    : `¿Eliminar la etapa "${s.name}"?`;
+  if(!confirm(msg)) return;
+  deals.forEach(d=>{ if(d.stage===id) d.stage='nuevo'; });
+  STAGES = STAGES.filter(x=>x.id!==id);
+  renderPipeline(); updateKPIs(); save();
+}
+function deleteStage() {
+  const id = document.getElementById('mstage-id').value;
+  closeModal('modal-stage');
+  confirmDeleteStage(id);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -784,7 +922,7 @@ function openAddModal(stage='nuevo') {
   document.getElementById('modal-deal').classList.remove('hidden');
 }
 function openEditModal(id) {
-  const d = deals.find(x=>x.id===id); if(!d) return;
+  const d = deals.find(x=>x.id==id); if(!d) return;
   editDealId = id;
   document.getElementById('mdeal-title').textContent = 'Editar Deal';
   document.getElementById('mdeal-delete').classList.remove('hidden');
@@ -805,7 +943,7 @@ function openEditModal(id) {
   buildStageOptions(d.stage);
   document.getElementById('modal-deal').classList.remove('hidden');
 }
-function saveDeal() {
+async function saveDeal() {
   const data = {
     name:        document.getElementById('mdeal-name').value.trim(),
     company:     document.getElementById('mdeal-company').value.trim(),
@@ -820,9 +958,15 @@ function saveDeal() {
     nextContact: document.getElementById('mdeal-nextcontact').value||null,
   };
   if(!data.name||!data.company){alert('Nombre y empresa son obligatorios.');return;}
-  if(editDealId) { const i=deals.findIndex(d=>d.id===editDealId); if(i>=0) deals[i]={...deals[i],...data}; }
-  else { deals.push({id:nextDealId++,...data,created:new Date().toISOString().slice(0,10)}); }
-  closeModal('modal-deal'); renderPipeline(); updateKPIs(); save();
+  if(editDealId) {
+    const i=deals.findIndex(d=>d.id===editDealId);
+    if(i>=0) deals[i]={...deals[i],...data};
+    await saveDealDB(data, editDealId);
+  } else {
+    const newId = await saveDealDB(data, null);
+    deals.push({id:newId||nextDealId++,...data,created:new Date().toISOString().slice(0,10)});
+  }
+  closeModal('modal-deal'); renderPipeline(); updateKPIs();
 }
 // Show/hide GCal button dynamically when date is typed
 function onNextContactChange() {
@@ -856,10 +1000,11 @@ function openGcal() {
   const details = encodeURIComponent(detailsLines);
   window.open(`https://calendar.google.com/calendar/render?action=TEMPLATE&text=${title}&dates=${start}/${end}&details=${details}`, '_blank');
 }
-function deleteDeal() {
+async function deleteDeal() {
   if(!confirm('¿Eliminar este deal permanentemente?')) return;
+  await deleteDealDB(editDealId);
   deals = deals.filter(d=>d.id!==editDealId);
-  closeModal('modal-deal'); renderPipeline(); updateKPIs(); save();
+  closeModal('modal-deal'); renderPipeline(); updateKPIs();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -867,27 +1012,19 @@ function deleteDeal() {
 // ═══════════════════════════════════════════════════════════════════════
 function renderContacts() {
   const search = (document.getElementById('c-search')?.value||'').toLowerCase();
-  const ind    = document.getElementById('c-industry')?.value||'';
   const stat   = document.getElementById('c-status')?.value||'';
-
-  const sel = document.getElementById('c-industry');
-  if(sel.children.length<=1){
-    [...new Set(contacts.map(c=>c.industry))].sort().forEach(i=>{const o=document.createElement('option');o.textContent=o.value=i;sel.appendChild(o);});
-  }
   const list = contacts.filter(c=>
     (!search||(c.company+c.contact+c.email).toLowerCase().includes(search)) &&
-    (!ind||c.industry===ind) && (!stat||c.status===stat)
+    (!stat||c.status===stat)
   );
   document.getElementById('contacts-tbody').innerHTML = list.map(c=>{
     const ss = STATUS_STYLE[c.status]||{bg:'#f5f5f5',fg:'#333'};
     const dc = deals.filter(d=>d.company===c.company).length;
     return `<tr>
-      <td><strong>${c.company}</strong><br><small style="color:#a0aec0">${c.city||''}</small></td>
+      <td><strong style="cursor:pointer;color:#1565c0;text-decoration:underline dotted" onclick="openEditContactModal(${c.id})">${c.company}</strong><br><small style="color:#a0aec0">${c.city||''}</small></td>
       <td>👤 ${c.contact}</td>
       <td><a href="mailto:${c.email}" style="color:#1565c0;text-decoration:none">${c.email}</a></td>
       <td style="color:#718096">${c.phone}</td>
-      <td><span class="badge" style="background:#e3f2fd;color:#1565c0">${c.industry}</span></td>
-      <td><span class="badge" style="background:#f7fafc;color:#4a5568">${SOURCE_ICONS[c.source]||'📌'} ${c.source||'–'}</span></td>
       <td><span class="badge" style="background:${ss.bg};color:${ss.fg}">${c.status}</span></td>
       <td><span class="badge" style="background:#f0f4f8;color:#2d3748;font-weight:700">${dc}</span></td>
       <td><button class="btn btn-secondary btn-sm" onclick="openEditContactModal(${c.id})">✏️</button></td>
@@ -898,11 +1035,11 @@ function openAddContactModal() {
   editContId = null;
   document.getElementById('mcont-title').textContent='Nuevo Contacto';
   document.getElementById('mcont-delete').classList.add('hidden');
-  ['company','contact','email','phone','industry','city','notes'].forEach(f=>document.getElementById('mcont-'+f).value='');
+  ['company','contact','email','phone','city','notes'].forEach(f=>{const el=document.getElementById('mcont-'+f); if(el) el.value='';});
   document.getElementById('modal-contact').classList.remove('hidden');
 }
 function openEditContactModal(id) {
-  const c=contacts.find(x=>x.id===id); if(!c) return;
+  const c=contacts.find(x=>x.id==id); if(!c) return;
   editContId=id;
   document.getElementById('mcont-title').textContent='Editar Contacto';
   document.getElementById('mcont-delete').classList.remove('hidden');
@@ -910,34 +1047,39 @@ function openEditContactModal(id) {
   document.getElementById('mcont-contact').value  = c.contact;
   document.getElementById('mcont-email').value    = c.email;
   document.getElementById('mcont-phone').value    = c.phone;
-  document.getElementById('mcont-industry').value = c.industry;
   document.getElementById('mcont-status').value   = c.status;
   document.getElementById('mcont-city').value     = c.city||'';
-  document.getElementById('mcont-source').value   = c.source||'Referido';
   document.getElementById('mcont-notes').value    = c.notes||'';
   document.getElementById('modal-contact').classList.remove('hidden');
 }
-function saveContact() {
+async function saveContact() {
   const data = {
     company:  document.getElementById('mcont-company').value.trim(),
     contact:  document.getElementById('mcont-contact').value.trim(),
     email:    document.getElementById('mcont-email').value.trim(),
     phone:    document.getElementById('mcont-phone').value.trim(),
-    industry: document.getElementById('mcont-industry').value.trim(),
+    industry: '',
     status:   document.getElementById('mcont-status').value,
     city:     document.getElementById('mcont-city').value.trim(),
-    source:   document.getElementById('mcont-source').value,
+    source:   '',
     notes:    document.getElementById('mcont-notes').value.trim(),
   };
   if(!data.company||!data.contact){alert('Empresa y contacto son obligatorios.');return;}
-  if(editContId){const i=contacts.findIndex(c=>c.id===editContId);if(i>=0) contacts[i]={...contacts[i],...data};}
-  else{contacts.push({id:nextContId++,...data});}
-  closeModal('modal-contact'); renderContacts(); updateKPIs(); save();
+  if(editContId){
+    const i=contacts.findIndex(c=>c.id===editContId);
+    if(i>=0) contacts[i]={...contacts[i],...data};
+    await saveContactToDB(data, editContId);
+  } else {
+    const newId = await saveContactToDB(data, null);
+    contacts.push({id:newId||nextContId++,...data});
+  }
+  closeModal('modal-contact'); renderContacts(); updateKPIs();
 }
-function deleteContact() {
+async function deleteContact() {
   if(!confirm('¿Eliminar este contacto?')) return;
+  await deleteContactDB(editContId);
   contacts=contacts.filter(c=>c.id!==editContId);
-  closeModal('modal-contact'); renderContacts(); updateKPIs(); save();
+  closeModal('modal-contact'); renderContacts(); updateKPIs();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -971,16 +1113,17 @@ function renderActivities() {
   }).join('');
   updateKPIs();
 }
-function markDone(id) {
-  const a=activities.find(x=>x.id===id); if(a) a.status='done';
-  renderActivities(); save();
+async function markDone(id) {
+  const a=activities.find(x=>x.id===id);
+  if(a) { a.status='done'; await saveActivityDB(a, id); }
+  renderActivities();
 }
 function openAddActivityModal() {
   ['title','company','deal'].forEach(f=>document.getElementById('mact-'+f).value='');
   document.getElementById('mact-due').value = new Date().toISOString().slice(0,10);
   document.getElementById('modal-activity').classList.remove('hidden');
 }
-function saveActivity() {
+async function saveActivity() {
   const data={
     type:    document.getElementById('mact-type').value,
     title:   document.getElementById('mact-title').value.trim(),
@@ -990,8 +1133,9 @@ function saveActivity() {
     status:  'pending', priority:'medium',
   };
   if(!data.title){alert('El título es obligatorio.');return;}
-  activities.push({id:nextActId++,...data});
-  closeModal('modal-activity'); renderActivities(); save();
+  const newId = await saveActivityDB(data, null);
+  activities.push({id:newId||nextActId++,...data});
+  closeModal('modal-activity'); renderActivities();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -1174,9 +1318,12 @@ function closeModal(id) { document.getElementById(id).classList.add('hidden'); }
 function toggleFilter() { /* future: show/hide filter panel */ }
 
 // ─── INIT ────────────────────────────────────────────────────────────
-load();
-renderPipeline();
-updateKPIs();
+// Mostrar loading mientras carga Supabase
+document.getElementById('view-pipeline').innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:15px">⏳ Cargando datos...</div>';
+loadFromSupabase().then(() => {
+  renderPipeline();
+  updateKPIs();
+});
 </script>
 </body>
 </html>
