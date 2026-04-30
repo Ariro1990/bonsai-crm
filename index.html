@@ -212,11 +212,42 @@ textarea.form-input{resize:vertical;min-height:70px}
 
 /* ── Modal wide ── */
 .modal-wide{width:640px}
+
+/* ── Login Screen ── */
+.login-screen{position:fixed;inset:0;background:linear-gradient(135deg,#0d1b2a 0%,#1b2d4a 50%,#0d1b2a 100%);display:flex;align-items:center;justify-content:center;z-index:9999}
+.login-card{background:#fff;border-radius:16px;padding:40px 36px;width:380px;box-shadow:0 25px 60px rgba(0,0,0,.4);text-align:center}
+.login-logo{font-size:28px;font-weight:800;color:#4fc3f7;margin-bottom:6px}
+.login-sub{font-size:13px;color:#a0aec0;margin-bottom:28px}
+.login-input{width:100%;padding:12px 14px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;outline:none;margin-bottom:14px;transition:border .15s}
+.login-input:focus{border-color:#1565c0;box-shadow:0 0 0 3px rgba(21,101,192,.12)}
+.login-btn{width:100%;padding:12px;background:#1565c0;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:background .15s;margin-top:4px}
+.login-btn:hover{background:#1976d2}
+.login-btn:disabled{background:#a0aec0;cursor:not-allowed}
+.login-error{color:#c62828;font-size:12px;font-weight:600;margin-top:12px;min-height:18px}
+.login-footer{font-size:11px;color:#a0aec0;margin-top:20px}
+
+/* ── Logout button ── */
+.sb-logout{background:none;border:1px solid rgba(255,255,255,.15);border-radius:6px;color:rgba(255,255,255,.5);font-size:11px;padding:4px 10px;cursor:pointer;margin-top:8px;transition:all .15s;width:100%}
+.sb-logout:hover{background:rgba(255,255,255,.08);color:#fff;border-color:rgba(255,255,255,.3)}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.39.3/dist/umd/supabase.min.js"></script>
 </head>
 <body>
-<div class="app">
+
+<!-- ═══ LOGIN SCREEN ═══ -->
+<div class="login-screen" id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🌿 Bonsai CRM</div>
+    <div class="login-sub">Ingresá con tu cuenta para continuar</div>
+    <input class="login-input" id="login-email" type="email" placeholder="Email" autocomplete="email">
+    <input class="login-input" id="login-pass" type="password" placeholder="Contraseña" autocomplete="current-password">
+    <button class="login-btn" id="login-btn" onclick="doLogin()">Iniciar sesión</button>
+    <div class="login-error" id="login-error"></div>
+    <div class="login-footer">Acceso exclusivo para usuarios autorizados</div>
+  </div>
+</div>
+
+<div class="app hidden" id="app-main">
 
 <!-- ═══ SIDEBAR ═══ -->
 <aside class="sidebar">
@@ -253,6 +284,7 @@ textarea.form-input{resize:vertical;min-height:70px}
         <div class="sb-role">Gerente Comercial</div>
       </div>
     </div>
+    <button class="sb-logout" onclick="doLogout()">🚪 Cerrar sesión</button>
   </div>
 </aside>
 
@@ -1520,13 +1552,59 @@ function togglePass(inputId, btn) {
   else { input.type = 'password'; btn.textContent = '👁'; }
 }
 
-// ─── INIT ────────────────────────────────────────────────────────────
-// Mostrar loading mientras carga Supabase
-document.getElementById('view-pipeline').innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:15px">⏳ Cargando datos...</div>';
-loadFromSupabase().then(() => {
+// ═══════════════════════════════════════════════════════════════════════
+// AUTENTICACIÓN
+// ═══════════════════════════════════════════════════════════════════════
+async function checkSession() {
+  const { data: { session } } = await supa.auth.getSession();
+  if(session) {
+    showApp();
+  } else {
+    document.getElementById('login-screen').classList.remove('hidden');
+    document.getElementById('app-main').classList.add('hidden');
+  }
+}
+
+async function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-pass').value;
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-btn');
+  errEl.textContent = '';
+  if(!email || !pass) { errEl.textContent = 'Completá email y contraseña.'; return; }
+  btn.disabled = true; btn.textContent = 'Ingresando...';
+  const { error } = await supa.auth.signInWithPassword({ email, password: pass });
+  btn.disabled = false; btn.textContent = 'Iniciar sesión';
+  if(error) {
+    errEl.textContent = 'Email o contraseña incorrectos.';
+    return;
+  }
+  showApp();
+}
+
+async function doLogout() {
+  await supa.auth.signOut();
+  document.getElementById('app-main').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('login-pass').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+async function showApp() {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-main').classList.remove('hidden');
+  document.getElementById('view-pipeline').innerHTML = '<div style="padding:40px;text-align:center;color:#a0aec0;font-size:15px">⏳ Cargando datos...</div>';
+  await loadFromSupabase();
   renderPipeline();
   updateKPIs();
-});
+}
+
+// Permitir Enter para hacer login
+document.getElementById('login-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
+document.getElementById('login-email').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('login-pass').focus(); });
+
+// ─── INIT ────────────────────────────────────────────────────────────
+checkSession();
 </script>
 </body>
 </html>
